@@ -30,7 +30,13 @@ async def category_options(category: str, request: Request):
             response.raise_for_status()
             return response.json()
     except (httpx.HTTPError, ValueError):
-        return {"category": category, "products": [], "audiences": [], "brand_personalities": [], "channels": []}
+        return {
+            "category": category,
+            "products": [f"{category} essentials", f"{category} bestsellers", f"new {category} arrivals"],
+            "audiences": ["Local families", "Young professionals", "Value-conscious shoppers"],
+            "brand_personalities": ["Trusted", "Modern", "Friendly", "Premium"],
+            "channels": ["Instagram", "Telegram", "WhatsApp", "Local search"],
+        }
 
 
 @router.post("/search", response_model=TrendSearchResponse)
