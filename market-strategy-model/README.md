@@ -22,6 +22,16 @@ Copy-Item .env.example .env
 uvicorn app.main:app --reload
 ```
 
+If the server raises `ModuleNotFoundError: No module named 'qrcode'` (or another declared dependency), synchronize the virtual environment used by the terminal. The package is already declared by `qrcode[pil]` in `requirements.txt`; installing the manifest is required after a new environment is created or the manifest changes:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -c "import qrcode; from app.main import app; print('Backend imports OK')"
+```
+
+Confirm that `python -c "import sys; print(sys.executable)"` points to `market-strategy-model\.venv\Scripts\python.exe` before starting Uvicorn.
+
 Create API keys in the Tavily dashboard, Google Cloud Console (enable YouTube Data API v3), and the OpenAI platform. Put them only in `.env`; provider status exposes configuration state, never secrets. The SQLite database is initialized automatically on startup.
 
 The supported environment contract is `APP_ENV`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `TAVILY_API_KEY`, optional `YOUTUBE_API_KEY`, `DATABASE_URL`, `MAX_WEB_RESULTS`, `MAX_YOUTUBE_RESULTS`, `CACHE_TTL_SECONDS`, `REQUEST_TIMEOUT_SECONDS`, and comma-separated `ALLOWED_ORIGINS`. Set `OPENAI_MODEL` to a model available to your API project; it is intentionally blank in `.env.example`.

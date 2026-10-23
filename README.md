@@ -30,6 +30,14 @@ Copy-Item .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
 
+If startup reports `ModuleNotFoundError` for a package such as `qrcode`, the active virtual environment was created before the dependency manifest was updated. From the backend directory, synchronize the active environment and retry:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -c "import qrcode; from app.main import app; print('Backend imports OK')"
+```
+
 Backend URLs:
 
 - Swagger UI: <http://127.0.0.1:8000/docs>
@@ -77,6 +85,8 @@ npx tsc --noEmit
 npm run build
 npx eslint src/app/marketing-studio src/components/marketing src/lib/api/client.ts src/lib/api/types.ts --quiet
 ```
+
+The validation commands should be run from the respective project directories. Do not use a globally installed Python or a different virtual environment when validating the backend.
 
 ## Important limitations
 
