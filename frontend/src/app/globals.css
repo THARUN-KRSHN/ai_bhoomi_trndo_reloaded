@@ -63,6 +63,34 @@ body {
   outline: none;
 }
 .studio-input:focus { border-color: #0C3D2D; box-shadow: 0 0 0 3px #D9FBE8; }
+.auth-input {
+  display: block;
+  width: 100%;
+  border: 1px solid #D9DDD7;
+  border-radius: 14px;
+  background: #FAFBF9;
+  padding: 14px 16px;
+  color: #111211;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.auth-input:focus { border-color: #0C3D2D; box-shadow: 0 0 0 4px #D9FBE8; }
+.auth-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 999px;
+  background: #0C3D2D;
+  padding: 15px 20px 15px 24px;
+  color: #70F0A6;
+  font-size: 14px;
+  font-weight: 800;
+  transition: background-color .2s, transform .2s;
+}
+.auth-button:hover { background: #14523E; transform: translateY(-1px); }
+.auth-button:disabled { cursor: wait; opacity: .65; transform: none; }
 
 /* Custom editorial scrollbar */
 ::-webkit-scrollbar {
