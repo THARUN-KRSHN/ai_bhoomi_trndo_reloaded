@@ -46,6 +46,7 @@ Open <http://localhost:3000> after starting the development server.
 - `/auth/login` — session login with generic credential errors.
 - `/onboarding` — three-step shop profile setup persisted by the backend.
 - `/trends` — authenticated search against the existing Flask Trend Finder and strategy linking.
+- `/onboarding` uses category-aware generated pills for products, audiences, brand personality, and channels; setup may be skipped and completed later.
 
 ### Market Strategy
 

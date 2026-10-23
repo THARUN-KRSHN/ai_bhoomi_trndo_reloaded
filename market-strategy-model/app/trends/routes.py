@@ -10,6 +10,29 @@ from app.trends.schemas import TrendSearchRequest, TrendSearchResponse
 router = APIRouter(prefix="/api/v1/trends")
 
 
+@router.get("/recent")
+def recent_trends(request: Request, limit: int = 5):
+    with SessionLocal() as session:
+        user = current_user(request, session)
+        records = session.query(TrendSearchRecord).filter_by(user_id=user.user_id).order_by(TrendSearchRecord.created_at.desc()).limit(min(max(limit, 1), 20)).all()
+        return [{"search_id": record.search_id, "topic": record.topic, "demo": record.demo, "created_at": record.created_at, "result": json.loads(record.result_json), "error": record.error} for record in records]
+
+
+@router.get("/category-options")
+async def category_options(category: str, request: Request):
+    with SessionLocal() as session:
+        current_user(request, session)
+    import httpx
+    settings = __import__("app.config", fromlist=["get_settings"]).get_settings()
+    try:
+        async with httpx.AsyncClient(timeout=settings.trend_finder_timeout_seconds) as client:
+            response = await client.get(f"{settings.trend_finder_base_url.rstrip('/')}/category-options", params={"category": category})
+            response.raise_for_status()
+            return response.json()
+    except (httpx.HTTPError, ValueError):
+        return {"category": category, "products": [], "audiences": [], "brand_personalities": [], "channels": []}
+
+
 @router.post("/search", response_model=TrendSearchResponse)
 async def trend_search(payload: TrendSearchRequest, request: Request):
     with SessionLocal() as session:

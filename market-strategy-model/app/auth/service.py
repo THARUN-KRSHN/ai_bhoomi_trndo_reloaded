@@ -102,6 +102,7 @@ def save_profile(session, user: UserRecord, payload: dict) -> ShopProfile:
         profile = ShopProfile(profile_id=f"profile-{uuid.uuid4().hex}", user_id=user.user_id, profile_json=__import__("json").dumps(payload))
         session.add(profile)
     user.onboarding_complete = True
+    user.onboarding_skipped = False
     session.commit()
     return profile
 

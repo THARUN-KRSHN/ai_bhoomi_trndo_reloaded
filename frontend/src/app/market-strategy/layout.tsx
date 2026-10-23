@@ -15,9 +15,9 @@ export default function MarketStrategyLayout({
   const router = useRouter();
   useEffect(() => {
     if (!loading && !user) router.replace("/auth/login");
-    else if (!loading && user && !user.onboarding_complete) router.replace("/onboarding");
+    else if (!loading && user && !user.onboarding_complete && !user.onboarding_skipped) router.replace("/onboarding");
   }, [loading, user, router]);
-  if (loading || !user || !user.onboarding_complete) return <div className="min-h-screen flex items-center justify-center text-sm text-[#70736F]">Loading your TRNDO workspace…</div>;
+  if (loading || !user || (!user.onboarding_complete && !user.onboarding_skipped)) return <div className="min-h-screen flex items-center justify-center text-sm text-[#70736F]">Loading your TRNDO workspace…</div>;
   return (
     <div className="min-h-screen flex flex-col bg-[#F4F4F1] text-[#111211]">
       <Suspense fallback={<div className="h-16 bg-[#FFFFFF]/90 border-b border-[#E4E6E1]" />}>

@@ -14,21 +14,30 @@ def register_user(payload: AuthRequest):
     with SessionLocal() as session:
         user, token = register(session, payload.phone_number, payload.pin)
         session.commit()
-        return AuthResponse(access_token=token, user_id=user.user_id, onboarding_complete=user.onboarding_complete)
+        return AuthResponse(access_token=token, user_id=user.user_id, onboarding_complete=user.onboarding_complete, onboarding_skipped=user.onboarding_skipped)
 
 
 @router.post("/login", response_model=AuthResponse)
 def login_user(payload: AuthRequest):
     with SessionLocal() as session:
         user, token = login(session, payload.phone_number, payload.pin)
-        return AuthResponse(access_token=token, user_id=user.user_id, onboarding_complete=user.onboarding_complete)
+        return AuthResponse(access_token=token, user_id=user.user_id, onboarding_complete=user.onboarding_complete, onboarding_skipped=user.onboarding_skipped)
 
 
 @router.get("/me")
 def get_me(request: Request):
     with SessionLocal() as session:
         user = current_user(request, session)
-        return {"user_id": user.user_id, "phone_number": user.phone_number, "onboarding_complete": user.onboarding_complete}
+        return {"user_id": user.user_id, "phone_number": user.phone_number, "onboarding_complete": user.onboarding_complete, "onboarding_skipped": user.onboarding_skipped}
+
+
+@router.post("/onboarding/skip")
+def skip_onboarding(request: Request):
+    with SessionLocal() as session:
+        user = current_user(request, session)
+        user.onboarding_skipped = True
+        session.commit()
+        return {"onboarding_complete": user.onboarding_complete, "onboarding_skipped": True}
 
 
 @router.post("/logout", status_code=204)

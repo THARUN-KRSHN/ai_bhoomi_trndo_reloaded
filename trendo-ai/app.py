@@ -23,6 +23,8 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 MARKETING_STUDIO_URL = os.getenv("MARKETING_STUDIO_URL", "http://localhost:3000/marketing-studio")
 STRATEGY_API_URL = os.getenv("STRATEGY_API_URL", "http://127.0.0.1:8000")
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
@@ -366,6 +368,43 @@ def api_endpoint():
         "trends_meta": trends_payload.get("meta", {}),
         "trends_errors": trends_payload.get("errors", []),
     })
+
+
+@app.route('/category-options', methods=['GET'])
+def category_options():
+    category = (request.args.get("category") or "").strip()
+    if not category:
+        return jsonify({"error": "category is required"}), 400
+    fallback = {
+        "category": category,
+        "products": [f"{category} essentials", f"{category} bestsellers", f"new {category} arrivals"],
+        "audiences": ["Local families", "Young professionals", "Value-conscious shoppers"],
+        "brand_personalities": ["Trusted", "Modern", "Friendly", "Premium"],
+        "channels": ["Instagram", "Telegram", "WhatsApp", "Local search"],
+    }
+    if not GEMINI_API_KEY:
+        return jsonify(fallback)
+    prompt = (
+        "Return ONLY valid JSON for a small-business onboarding picker. "
+        "For the category below, provide exactly 6 product suggestions, 5 customer audience suggestions, "
+        "5 brand personality suggestions, and 4 marketing channel suggestions. "
+        'Schema: {"products":["..."],"audiences":["..."],"brand_personalities":["..."],"channels":["..."]}. '
+        f"Category: {category}"
+    )
+    try:
+        response = requests.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent",
+            params={"key": GEMINI_API_KEY},
+            json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"}},
+            timeout=12,
+        )
+        response.raise_for_status()
+        text = response.json()["candidates"][0]["content"]["parts"][0]["text"]
+        generated = json.loads(text)
+        return jsonify({**fallback, **{key: value for key, value in generated.items() if isinstance(value, list)}})
+    except (requests.RequestException, KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+        logger.warning("Gemini category options unavailable | category=%s | error=%s", category, exc)
+        return jsonify(fallback)
 
 
 @app.route('/', methods=['GET'])

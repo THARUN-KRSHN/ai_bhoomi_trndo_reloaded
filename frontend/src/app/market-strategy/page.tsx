@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ShieldCheck, Info } from "lucide-react";
 import { useStrategy } from "@/context/StrategyContext";
@@ -9,11 +9,36 @@ import { OpportunityCard } from "@/components/studio/OpportunityCard";
 import { WorkflowVisual } from "@/components/studio/WorkflowVisual";
 import { StageOverview } from "@/components/studio/StageOverview";
 import { Drawer } from "@/components/ui/Drawer";
+import { getRecentTrends, searchTrends } from "@/lib/api/client";
 
 export default function MarketStrategyStudioPage() {
   const router = useRouter();
   const { selectedOpportunity, selectOpportunity } = useStrategy();
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
+  const [trendQuery, setTrendQuery] = useState("");
+  const [trendFilter, setTrendFilter] = useState("");
+  const [recentTrends, setRecentTrends] = useState<Array<{ search_id: string; topic: string; result: Record<string, unknown> }>>([]);
+  const [trendBusy, setTrendBusy] = useState(false);
+  const [trendError, setTrendError] = useState("");
+
+  const loadRecentTrends = async () => {
+    try {
+      const records = await getRecentTrends(5);
+      setRecentTrends(records);
+    } catch {
+      setTrendError("Recent trend signals are unavailable until the Trend Finder is running.");
+    }
+  };
+  useEffect(() => { loadRecentTrends(); }, []);
+  async function runTrendHunt(event: FormEvent) {
+    event.preventDefault();
+    const topic = [trendQuery, trendFilter].filter(Boolean).join(" ");
+    if (!topic) return;
+    setTrendBusy(true); setTrendError("");
+    try { await searchTrends(topic, trendFilter ? { filter: trendFilter } : {}); setTrendQuery(""); setTrendFilter(""); await loadRecentTrends(); }
+    catch { setTrendError("Trend hunt failed. Check that Flask Trend Finder is running."); }
+    finally { setTrendBusy(false); }
+  }
 
   const handleContinue = () => {
     router.push("/market-strategy/brief");
@@ -21,6 +46,15 @@ export default function MarketStrategyStudioPage() {
 
   return (
     <div className="space-y-12 sm:space-y-16">
+      <section className="rounded-[28px] border border-[#E4E6E1] bg-white p-6 sm:p-8">
+        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <div><span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#0C3D2D]">Live discovery</span><h2 className="mt-2 text-2xl font-black tracking-tight">Recent trend signals</h2><p className="mt-1 text-sm text-[#70736F]">Scores come from the existing Flask Trend Finder and are stored to your account.</p></div>
+          <a href="/trends" className="text-sm font-bold text-[#0C3D2D] hover:underline">Open Trend Finder →</a>
+        </div>
+        <form onSubmit={runTrendHunt} className="mt-6 grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><input value={trendQuery} onChange={e => setTrendQuery(e.target.value)} placeholder="Search a product or topic" className="auth-input" /><input value={trendFilter} onChange={e => setTrendFilter(e.target.value)} placeholder="Optional filter, e.g. local premium" className="auth-input" /><button disabled={trendBusy} className="rounded-full bg-[#0C3D2D] px-5 py-3 text-sm font-bold text-[#70F0A6]">{trendBusy ? "Hunting…" : "Refresh trends"}</button></form>
+        {trendError && <p className="mt-4 text-sm text-red-700">{trendError}</p>}
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{recentTrends.length === 0 ? <p className="text-sm text-[#70736F]">No saved trend hunt yet. Run one above.</p> : recentTrends.flatMap(record => { const top = (record.result.analysis as { top_10?: Array<{ keyword: string; score: number; reliability_score?: number }> } | undefined)?.top_10 || []; return top.slice(0, 6).map(item => <div key={`${record.search_id}-${item.keyword}`} className="rounded-2xl bg-[#F4F4F1] p-4"><div className="flex items-start justify-between gap-3"><p className="text-sm font-bold">{item.keyword}</p><span className="rounded-full bg-[#E3FAEC] px-2 py-1 text-xs font-bold text-[#0C3D2D]">{Math.round(item.score)}</span></div><p className="mt-2 text-xs text-[#70736F]">Reliability {Math.round(item.reliability_score || 0)} · {record.topic}</p></div>); })}</div>
+      </section>
       {/* SECTION A: Editorial Hero Section (Reference A Inspired) */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
         {/* Left Column */}

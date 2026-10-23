@@ -70,6 +70,12 @@ GET   /api/v1/orders
 GET   /api/v1/telegram/conversations
 ```
 
+`GET /api/v1/trends/category-options?category=...` proxies category suggestions
+from the Flask Trend Finder. The Gemini key remains server-side in the Flask
+service; the browser never receives it. If Gemini is unavailable, the Flask
+service returns clearly generic category suggestions rather than blocking profile
+setup.
+
 ## Downstream promotion, orders, Telegram, and UPI module
 
 The downstream module reuses a saved `strategy_id`; it does not create a second scoring source of truth. A live promotion request must include a strategy ID and a verified `product_snapshot`. Reports without merchant ownership metadata can only be used with the explicit development merchant (`development-merchant`) until an upstream authenticated merchant model is added.

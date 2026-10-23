@@ -190,6 +190,7 @@ export interface AuthUser {
   user_id: string;
   phone_number: string;
   onboarding_complete: boolean;
+  onboarding_skipped: boolean;
 }
 
 export async function authenticate(path: "/api/v1/auth/register" | "/api/v1/auth/login", phone_number: string, pin: string) {
@@ -219,6 +220,18 @@ export async function saveProfile(profile: Record<string, unknown>) {
     method: "PUT",
     body: JSON.stringify(profile),
   });
+}
+
+export async function skipOnboarding() {
+  return request<{ onboarding_complete: boolean; onboarding_skipped: boolean }>("/api/v1/auth/onboarding/skip", { method: "POST" });
+}
+
+export async function getCategoryOptions(category: string) {
+  return request<{ category: string; products: string[]; audiences: string[]; brand_personalities: string[]; channels: string[] }>(`/api/v1/trends/category-options?category=${encodeURIComponent(category)}`);
+}
+
+export async function getRecentTrends(limit = 5) {
+  return request<Array<{ search_id: string; topic: string; demo: boolean; created_at: string; result: Record<string, unknown>; error: string | null }>>(`/api/v1/trends/recent?limit=${limit}`);
 }
 
 export async function searchTrends(topic: string, filters: Record<string, unknown> = {}) {

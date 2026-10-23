@@ -10,6 +10,7 @@ class AuthResponse(BaseModel):
     access_token: str
     user_id: str
     onboarding_complete: bool
+    onboarding_skipped: bool = False
 
 
 class PinChangeRequest(BaseModel):

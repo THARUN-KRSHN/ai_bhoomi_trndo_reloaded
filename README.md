@@ -18,6 +18,7 @@ The backend remains the source of truth for strategy scoring, evidence, promotio
 - Python 3.12+ recommended for the backend
 - Node.js 20+ and npm for the frontend
 - Optional provider credentials: OpenAI, Tavily, YouTube Data API
+- Optional Gemini credential in the Flask Trend Finder for category-aware onboarding suggestions
 - Optional Telegram bot and merchant UPI configuration
 
 ## Run the integrated product
@@ -87,6 +88,8 @@ Open <http://localhost:3000>. The frontend uses `NEXT_PUBLIC_API_BASE_URL` for t
 - `/marketing-studio/creations` — saved browser creation gallery.
 - `/marketing-studio/inbox` — Telegram enquiry surface.
 - `/marketing-studio/orders` — order and payment-instruction surface.
+- `/onboarding` — guided category-aware profile setup with generated selection pills; it can be skipped and completed later.
+- `/trends` — authenticated Trend Finder search and strategy linking.
 
 ## Validation
 

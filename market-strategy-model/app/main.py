@@ -11,6 +11,21 @@ from app.auth.routes import router as auth_router, profile_router
 from app.trends.routes import router as trends_router
 
 Base.metadata.create_all(bind=engine)
+
+
+def _add_missing_columns() -> None:
+    """Keep the local SQLite prototype usable when a new field is added."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    if "users" in inspector.get_table_names():
+        columns = {column["name"] for column in inspector.get_columns("users")}
+        if "onboarding_skipped" not in columns:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE users ADD COLUMN onboarding_skipped BOOLEAN DEFAULT 0"))
+
+
+_add_missing_columns()
 app = FastAPI(title=get_settings().app_name, version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
