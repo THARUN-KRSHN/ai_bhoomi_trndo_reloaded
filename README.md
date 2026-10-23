@@ -6,6 +6,7 @@ TRNDO AI is a local-first marketing workspace for small businesses. It combines 
 
 ```text
 ai_bhoomi/
+├── trendo-ai/                # Existing Flask trend-discovery dashboard
 ├── market-strategy-model/   # FastAPI backend, strategy engine, promotion/order services
 └── frontend/                 # Next.js Marketing Studio and Market Strategy UI
 ```
@@ -19,7 +20,27 @@ The backend remains the source of truth for strategy scoring, evidence, promotio
 - Optional provider credentials: OpenAI, Tavily, YouTube Data API
 - Optional Telegram bot and merchant UPI configuration
 
-## Run the backend
+## Run the integrated product
+
+TRNDO AI is composed of one product with three local services:
+
+| Service | URL | Responsibility |
+|---|---|---|
+| Flask Trend Discovery | `http://127.0.0.1:5000` | Groq keyword generation, SerpApi trend signals, image discovery |
+| FastAPI Strategy API | `http://127.0.0.1:8000` | Evidence-grounded strategy, promotions, Telegram, orders, UPI |
+| Next.js Marketing Studio | `http://localhost:3000` | Main user interface for strategy and promotion workflows |
+
+Start the FastAPI and Next.js services as described below, then start the existing Flask dashboard:
+
+```powershell
+Set-Location .\trendo-ai
+python -m pip install -r requirements.txt
+python app.py
+```
+
+The Flask dashboard now contains an `Open Marketing Studio` bridge at `/marketing-studio` and an integration status endpoint at `/integration/status`. The bridge keeps Trend Discovery and Marketing Studio in the same TRNDO workflow without duplicating the strategy engine.
+
+## Run the FastAPI backend
 
 ```powershell
 Set-Location .\market-strategy-model
