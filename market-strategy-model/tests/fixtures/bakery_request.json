@@ -1,0 +1,27 @@
+{
+  "business_name": "Harbor Bakehouse",
+  "category": "bakery",
+  "subcategory": "artisan bread",
+  "city": "Kochi",
+  "region": "Kerala",
+  "country": "India",
+  "primary_language": "English",
+  "secondary_languages": ["Malayalam"],
+  "products_services": [
+    {
+      "name": "Sourdough loaf",
+      "description": "Fresh naturally leavened bread",
+      "verified_attributes": ["baked in small batches"],
+      "price": 250
+    }
+  ],
+  "target_audience": "Nearby families seeking fresh bread",
+  "objective": "qualified_inquiries",
+  "preferred_channels": ["Instagram", "WhatsApp"],
+  "budget_type": "fixed",
+  "budget_amount": 3000,
+  "brand_personality": "warm and helpful",
+  "desired_tone": "clear and inviting",
+  "campaign_time_horizon": "14 days",
+  "preferred_content_formats": ["short video", "static post"]
+}
