@@ -7,7 +7,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/market-strategy");
+    router.replace("/auth/login");
   }, [router]);
 
   return (

@@ -1,8 +1,8 @@
 import json
 from fastapi import APIRouter, Request
 
-from app.auth.schemas import AuthRequest, AuthResponse, ShopProfileRequest
-from app.auth.service import current_user, login, register, save_profile
+from app.auth.schemas import AuthRequest, AuthResponse, PinChangeRequest, ShopProfileRequest
+from app.auth.service import change_pin, current_user, login, logout, register, save_profile
 from app.db.database import SessionLocal
 from app.db.models import ShopProfile
 
@@ -29,6 +29,19 @@ def get_me(request: Request):
     with SessionLocal() as session:
         user = current_user(request, session)
         return {"user_id": user.user_id, "phone_number": user.phone_number, "onboarding_complete": user.onboarding_complete}
+
+
+@router.post("/logout", status_code=204)
+def logout_user(request: Request):
+    with SessionLocal() as session:
+        logout(request, session)
+
+
+@router.patch("/pin", status_code=204)
+def update_pin(payload: PinChangeRequest, request: Request):
+    with SessionLocal() as session:
+        user = current_user(request, session)
+        change_pin(session, user, payload.current_pin, payload.new_pin)
 
 
 profile_router = APIRouter(prefix="/api/v1")

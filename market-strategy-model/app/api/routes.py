@@ -1,9 +1,10 @@
 import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.config import get_settings
 from app.db.database import SessionLocal
-from app.db.models import StrategyRecord
+from app.db.models import ShopProfile, StrategyRecord, TrendSearchRecord
+from app.auth.service import current_user
 from app.schemas.requests import BusinessRequest
 from app.schemas.reports import StrategyReport
 from app.services.research.tavily_provider import TavilyProvider
@@ -20,7 +21,7 @@ def provider_status():
 
 
 @router.post("/strategy/generate", response_model=StrategyReport)
-async def generate(request: BusinessRequest):
+async def generate(request: BusinessRequest, http_request: Request):
     settings = get_settings()
     report = await generate_strategy(
         request,
@@ -28,7 +29,10 @@ async def generate(request: BusinessRequest):
         YouTubeProvider(settings.youtube_api_key, settings.request_timeout_seconds, settings.max_youtube_results),
     )
     with SessionLocal() as session:
-        session.add(StrategyRecord(strategy_id=report.strategy_id, request_json=request.model_dump_json(), report_json=report.model_dump_json(), score_version=report.score_version))
+        user = None
+        if http_request.headers.get("Authorization"):
+            user = current_user(http_request, session)
+        session.add(StrategyRecord(strategy_id=report.strategy_id, user_id=user.user_id if user else None, request_json=request.model_dump_json(), report_json=report.model_dump_json(), score_version=report.score_version))
         session.commit()
     return report
 
@@ -40,6 +44,40 @@ def demo():
     return report
 
 
+@router.post("/strategy/from-trend/{search_id}", response_model=StrategyReport)
+async def generate_from_trend(search_id: str, request: Request):
+    with SessionLocal() as session:
+        user = current_user(request, session)
+        trend = session.query(TrendSearchRecord).filter_by(search_id=search_id, user_id=user.user_id).first()
+        profile_record = session.query(ShopProfile).filter_by(user_id=user.user_id).first()
+        if not trend or not profile_record:
+            raise HTTPException(status_code=404, detail="trend search or shop profile not found")
+        profile = json.loads(profile_record.profile_json)
+        products = profile.get("products") or [{"name": trend.topic, "description": profile.get("description", ""), "price": None}]
+        request_model = BusinessRequest(
+            business_name=profile.get("shop_name"),
+            category=profile["category"],
+            subcategory=profile.get("subcategory"),
+            city=profile["city"],
+            region=profile["region"],
+            country=profile["country"],
+            primary_language=profile["primary_language"],
+            secondary_languages=profile.get("secondary_languages", []),
+            products_services=products,
+            target_audience=profile.get("audience_description", "Local customers"),
+            objective=profile.get("objective", "increase_qualified_inquiries"),
+            preferred_channels=profile.get("preferred_channels", []),
+            brand_personality=", ".join(profile.get("brand_personality", [])) or None,
+            campaign_time_horizon="14 days",
+            constraints=profile.get("constraints", []),
+        )
+    report = await generate_strategy(request_model, TavilyProvider(get_settings().tavily_api_key, get_settings().request_timeout_seconds, get_settings().max_web_results), YouTubeProvider(get_settings().youtube_api_key, get_settings().request_timeout_seconds, get_settings().max_youtube_results))
+    with SessionLocal() as session:
+        session.add(StrategyRecord(strategy_id=report.strategy_id, user_id=user.user_id, request_json=request_model.model_dump_json(), report_json=report.model_dump_json(), score_version=report.score_version))
+        session.commit()
+    return report
+
+
 def generate_demo(request: BusinessRequest) -> dict:
     report = __import__("asyncio").run(generate_strategy(request, TavilyProvider(None), YouTubeProvider(None))).model_dump(mode="json")
     report["demo"] = True
@@ -48,9 +86,12 @@ def generate_demo(request: BusinessRequest) -> dict:
 
 
 @router.get("/strategy/{strategy_id}", response_model=StrategyReport)
-def get_strategy(strategy_id: str):
+def get_strategy(strategy_id: str, request: Request):
     with SessionLocal() as session:
-        record = session.query(StrategyRecord).filter_by(strategy_id=strategy_id).first()
+        query = session.query(StrategyRecord).filter_by(strategy_id=strategy_id)
+        if request.headers.get("Authorization"):
+            query = query.filter_by(user_id=current_user(request, session).user_id)
+        record = query.first()
     if not record:
         raise HTTPException(status_code=404, detail="Strategy not found")
     return json.loads(record.report_json)

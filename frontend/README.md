@@ -40,6 +40,13 @@ Open <http://localhost:3000> after starting the development server.
 
 ## Routes
 
+### Account and discovery
+
+- `/auth/register` — phone/PIN registration.
+- `/auth/login` — session login with generic credential errors.
+- `/onboarding` — three-step shop profile setup persisted by the backend.
+- `/trends` — authenticated search against the existing Flask Trend Finder and strategy linking.
+
 ### Market Strategy
 
 - `/market-strategy`
@@ -75,6 +82,12 @@ The central API service is [src/lib/api/client.ts](./src/lib/api/client.ts). It 
 - Telegram promotion delivery.
 - Order lookup and status transitions.
 - UPI payment instructions.
+- Authentication bootstrap, logout, profile persistence, Trend Finder search, and strategy-from-trend linking.
+
+Protected workspace layouts validate `/api/v1/auth/me` before rendering and route
+unfinished accounts to onboarding. The current bearer-token backend contract uses
+browser session storage for the token; production should use an HTTP-only secure
+cookie with CSRF protection.
 
 The current backend supports:
 
@@ -98,7 +111,9 @@ With demo mode disabled:
 - Telegram and payment actions only run when explicitly requested.
 - Inbox and order list surfaces explain when their corresponding backend list endpoints are unavailable.
 
-The current backend does not yet expose a full strategy list, promotion list, Telegram conversation list, Telegram message-send endpoint, or order list. The UI deliberately reports those gaps rather than fabricating live records.
+The backend now exposes authenticated order listing and Telegram conversation-link
+status. Full Telegram message history/send and strategy/promotion list APIs remain
+future work; the UI does not fabricate those records.
 
 ## Design and accessibility
 

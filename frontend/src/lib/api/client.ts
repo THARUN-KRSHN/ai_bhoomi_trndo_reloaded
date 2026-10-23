@@ -7,6 +7,11 @@ const API_BASE_URL =
 const ENABLE_DEMO_DATA =
   process.env.NEXT_PUBLIC_ENABLE_DEMO_DATA !== "false";
 
+function authHeaders(): Record<string, string> {
+  const token = typeof window !== "undefined" ? sessionStorage.getItem("trndo_access_token") : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export class ApiError extends Error {
   status?: number;
   data?: unknown;
@@ -17,6 +22,7 @@ export class ApiError extends Error {
     this.status = status;
     this.data = data;
   }
+
 }
 
 /**
@@ -61,9 +67,7 @@ export async function generateStrategyReport(
 
     const res = await fetch(`${API_BASE_URL}/api/v1/strategy/generate`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(request),
       signal: controller.signal,
     });
@@ -130,7 +134,7 @@ export async function getStrategyReport(
   try {
     const res = await fetch(`${API_BASE_URL}/api/v1/strategy/${strategyId}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
     });
 
     if (!res.ok) {
@@ -154,9 +158,14 @@ export async function getStrategyReport(
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const token = typeof window !== "undefined" ? sessionStorage.getItem("trndo_access_token") : null;
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...(init.headers || {}) },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init.headers || {}),
+    },
   });
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;
@@ -166,9 +175,61 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     } catch {
       // Preserve the status-based message when the server does not return JSON.
     }
+    if (res.status === 401 && typeof window !== "undefined") {
+      sessionStorage.removeItem("trndo_access_token");
+      window.dispatchEvent(new Event("trndo-auth-expired"));
+    }
     throw new ApiError(detail, res.status);
   }
+
+  if (res.status === 204) return undefined as T;
   return res.json();
+}
+
+export interface AuthUser {
+  user_id: string;
+  phone_number: string;
+  onboarding_complete: boolean;
+}
+
+export async function authenticate(path: "/api/v1/auth/register" | "/api/v1/auth/login", phone_number: string, pin: string) {
+  const result = await request<{ access_token: string; user_id: string; onboarding_complete: boolean }>(path, {
+    method: "POST",
+    body: JSON.stringify({ phone_number, pin }),
+  });
+  sessionStorage.setItem("trndo_access_token", result.access_token);
+  return result;
+}
+
+export function getCurrentUser() {
+  return request<AuthUser>("/api/v1/auth/me");
+}
+
+export async function logout() {
+  await request<void>("/api/v1/auth/logout", { method: "POST" });
+  sessionStorage.removeItem("trndo_access_token");
+}
+
+export async function getProfile() {
+  return request<{ profile: Record<string, unknown> | null; version: number }>("/api/v1/profile");
+}
+
+export async function saveProfile(profile: Record<string, unknown>) {
+  return request<{ profile: Record<string, unknown>; version: number }>("/api/v1/profile", {
+    method: "PUT",
+    body: JSON.stringify(profile),
+  });
+}
+
+export async function searchTrends(topic: string, filters: Record<string, unknown> = {}) {
+  return request<{ search_id: string; topic: string; demo: boolean; result: Record<string, unknown> }>("/api/v1/trends/search", {
+    method: "POST",
+    body: JSON.stringify({ topic, filters }),
+  });
+}
+
+export async function generateStrategyFromTrend(searchId: string) {
+  return request<StrategyReport>(`/api/v1/strategy/from-trend/${encodeURIComponent(searchId)}`, { method: "POST" });
 }
 
 export async function generatePromotion(input: PromotionRequest): Promise<PromotionResponse> {

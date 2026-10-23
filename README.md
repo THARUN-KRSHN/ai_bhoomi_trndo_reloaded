@@ -112,8 +112,9 @@ The validation commands should be run from the respective project directories. D
 ## Important limitations
 
 - Demo mode is explicitly labelled and must not send real Telegram messages or create real payment requests.
-- The current backend does not yet provide strategy-list, promotion-list, Telegram conversation-list, Telegram message-send, or order-list endpoints.
-- Phone/PIN authentication, Argon2id PIN hashing, expiring bearer sessions, persistent shop profiles, and an authenticated Trend Finder adapter are now available in the FastAPI backend. The frontend authentication/onboarding screens and full cross-account authorization wiring are still the next integration phase.
+- Phone/PIN authentication, Argon2id PIN hashing, expiring bearer sessions, persistent shop profiles, authenticated Trend Finder search, strategy-from-trend linking, order listing, and Telegram conversation status are available.
+- The frontend includes registration, login, three-step onboarding, protected workspaces, and `/trends`. The prototype uses bearer tokens in session storage because the existing API contract is bearer-based; production should migrate to secure HTTP-only cookies with CSRF protection.
+- Phone ownership verification/OTP is not implemented and must be added before production account recovery or identity claims.
 - UPI QR generation creates payment instructions only; it does not verify settlement.
 - Telegram polling and webhook delivery must not run simultaneously for the same bot.
 - Authentication and tenant isolation are still required before production deployment.

@@ -1,17 +1,22 @@
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 
 from app.config import get_settings
 from app.db.database import SessionLocal
 from app.telegram.client import TelegramClient
 from app.telegram.handlers import handle_update
 from app.telegram.service import create_link_token, deep_link
+from app.auth.service import current_user
+from app.db.models import TelegramBinding
 
 router = APIRouter(prefix="/api/v1/telegram")
 
 
 @router.post("/link-token")
-def link_token(merchant_id: str):
+def link_token(merchant_id: str, request: Request):
     with SessionLocal() as session:
+        user = current_user(request, session) if request.headers.get("Authorization") else None
+        if user:
+            merchant_id = user.user_id
         token = create_link_token(session, merchant_id)
     return {"token": token, "expires_in_seconds": 600, "deep_link": deep_link(token)}
 
@@ -25,3 +30,13 @@ def webhook(payload: dict, x_telegram_bot_api_secret_token: str | None = Header(
         raise HTTPException(status_code=400, detail="Telegram update_id is required")
     import asyncio
     return asyncio.run(handle_update(payload, TelegramClient()))
+
+
+@router.get("/conversations")
+def conversations(request: Request):
+    with SessionLocal() as session:
+        user = current_user(request, session)
+        binding = session.query(TelegramBinding).filter_by(user_id=user.user_id).first()
+        if not binding:
+            return {"linked": False, "messages": []}
+        return {"linked": True, "chat_id": binding.chat_id, "messages": []}

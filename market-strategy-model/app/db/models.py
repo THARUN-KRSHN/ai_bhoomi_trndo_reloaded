@@ -9,6 +9,7 @@ class StrategyRecord(Base):
     __tablename__ = "strategies"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     strategy_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     request_json: Mapped[str] = mapped_column(Text)
     report_json: Mapped[str] = mapped_column(Text)
     score_version: Mapped[str] = mapped_column(String(40))
@@ -67,6 +68,7 @@ class PromotionRecord(Base):
     promotion_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     strategy_id: Mapped[str] = mapped_column(String(64), index=True)
     merchant_id: Mapped[str] = mapped_column(String(100), index=True)
+    user_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     request_json: Mapped[str] = mapped_column(Text)
     content_json: Mapped[str] = mapped_column(Text)
     demo: Mapped[bool] = mapped_column(default=False)
@@ -79,6 +81,7 @@ class AssetRecord(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     asset_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     merchant_id: Mapped[str] = mapped_column(String(100), index=True)
+    user_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     promotion_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     filename: Mapped[str] = mapped_column(String(255))
     path: Mapped[str] = mapped_column(Text)
@@ -94,6 +97,7 @@ class OrderRecord(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     merchant_id: Mapped[str] = mapped_column(String(100), index=True)
+    user_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     promotion_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     strategy_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     telegram_chat_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -122,6 +126,7 @@ class TelegramBinding(Base):
     __tablename__ = "telegram_bindings"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     merchant_id: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    user_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     chat_id: Mapped[str] = mapped_column(String(100), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

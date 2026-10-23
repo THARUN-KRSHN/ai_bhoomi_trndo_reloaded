@@ -52,7 +52,23 @@ Momentum is `null` and durability is `insufficient_data` unless comparable histo
 
 ## Limitations and production notes
 
-The application calculates opportunity scores; the model cannot invent or override those values. OpenAI refinement is schema-constrained and falls back to the deterministic report if the provider is unavailable. Trend momentum remains `null` and durability remains `insufficient_data` unless a permitted, comparable historical time series is supplied. Recent web articles, search results, and YouTube metadata are current signals or attention/context signals, not quantitative trend growth or purchase proof. This MVP intentionally does not depend on the limited Google Trends API alpha. Production requires authentication, tenant isolation, rate limiting, encrypted secrets, migrations, provider caching, observability, and stronger persistence controls. Network failures produce cautious no-evidence behavior rather than fabricated evidence.
+The application calculates opportunity scores; the model cannot invent or override those values. OpenAI refinement is schema-constrained and falls back to the deterministic report if the provider is unavailable. Trend momentum remains `null` and durability remains `insufficient_data` unless a permitted, comparable historical time series is supplied. Recent web articles, search results, and YouTube metadata are current signals or attention/context signals, not quantitative trend growth or purchase proof. This MVP intentionally does not depend on the limited Google Trends API alpha. Phone/PIN authentication now uses Argon2id hashes, opaque expiring bearer sessions, failed-attempt lockout, logout, and PIN rotation. Shop profiles and trend searches are persisted per account. Production still requires phone ownership verification/OTP, secure cookie transport with CSRF protection, rate limiting, migrations, provider caching, observability, and stronger persistence controls. Network failures produce cautious no-evidence behavior rather than fabricated evidence.
+
+Authenticated workflow endpoints include:
+
+```text
+POST  /api/v1/auth/register
+POST  /api/v1/auth/login
+POST  /api/v1/auth/logout
+PATCH /api/v1/auth/pin
+GET   /api/v1/auth/me
+GET|PUT|PATCH /api/v1/profile
+POST  /api/v1/trends/search
+GET   /api/v1/trends/search/{search_id}
+POST  /api/v1/strategy/from-trend/{search_id}
+GET   /api/v1/orders
+GET   /api/v1/telegram/conversations
+```
 
 ## Downstream promotion, orders, Telegram, and UPI module
 

@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
+from argon2.exceptions import VerifyMismatchError, VerificationError
 from fastapi import HTTPException, Request
 
 from app.config import get_settings
@@ -73,6 +73,24 @@ def current_user(request: Request, session) -> UserRecord:
     if not user:
         raise HTTPException(status_code=401, detail="account is unavailable")
     return user
+
+
+def logout(request: Request, session) -> None:
+    header = request.headers.get("Authorization", "")
+    if not header.startswith("Bearer "):
+        return
+    token_hash = hashlib.sha256(header[7:].strip().encode()).hexdigest()
+    session.query(AuthSession).filter_by(token_hash=token_hash).delete()
+    session.commit()
+
+
+def change_pin(session, user: UserRecord, current_pin: str, new_pin: str) -> None:
+    try:
+        _hasher.verify(user.pin_hash, current_pin)
+    except (VerifyMismatchError, VerificationError) as exc:
+        raise HTTPException(status_code=401, detail="current PIN is invalid") from exc
+    user.pin_hash = _hasher.hash(new_pin)
+    session.commit()
 
 
 def save_profile(session, user: UserRecord, payload: dict) -> ShopProfile:

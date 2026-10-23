@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from app.config import get_settings
 from app.db.database import SessionLocal
-from app.db.models import AssetRecord, PromotionRecord
+from app.db.models import AssetRecord, OrderRecord, PromotionRecord
 from app.orders.schemas import OrderCreate, OrderResponse, OrderStatus
 from app.orders.service import create_order, transition_order
 from app.payments.qr_generator import create_qr
@@ -14,15 +14,19 @@ from app.promotion.schemas import PromotionRequest, PromotionResponse
 from app.promotion.service import create_promotion, save_uploaded_asset
 from app.telegram.client import TelegramClient
 from app.db.models import TelegramBinding
+from app.auth.service import current_user
 
 router = APIRouter(prefix="/api/v1")
 
 
 @router.post("/promotions/assets")
-async def upload_asset(merchant_id: str = Form(...), asset_type: str = Form(...), file: UploadFile = File(...)):
+async def upload_asset(request: Request, merchant_id: str = Form(...), asset_type: str = Form(...), file: UploadFile = File(...)):
     content = await file.read()
     with SessionLocal() as session:
         asset = save_uploaded_asset(session, merchant_id, asset_type, file.filename or "asset", content)
+        if request.headers.get("Authorization"):
+            asset.user_id = current_user(request, session).user_id
+            session.commit()
         return {"asset_id": asset.asset_id, "asset_type": asset.asset_type, "width": asset.width, "height": asset.height}
 
 
@@ -36,15 +40,26 @@ def get_asset(asset_id: str):
 
 
 @router.post("/promotions/generate", response_model=PromotionResponse)
-async def generate_promotion(request: PromotionRequest):
+async def generate_promotion(request: PromotionRequest, http_request: Request):
     with SessionLocal() as session:
-        return await create_promotion(session, request)
+        response = await create_promotion(session, request)
+        if http_request.headers.get("Authorization"):
+            user = current_user(http_request, session)
+            record = session.query(PromotionRecord).filter_by(promotion_id=response.promotion_id).first()
+            if record:
+                record.user_id = user.user_id
+                session.query(AssetRecord).filter_by(promotion_id=record.promotion_id).update({"user_id": user.user_id})
+                session.commit()
+        return response
 
 
 @router.get("/promotions/{promotion_id}", response_model=PromotionResponse)
-def get_promotion(promotion_id: str):
+def get_promotion(promotion_id: str, request: Request):
     with SessionLocal() as session:
-        record = session.query(PromotionRecord).filter_by(promotion_id=promotion_id).first()
+        query = session.query(PromotionRecord).filter_by(promotion_id=promotion_id)
+        if request.headers.get("Authorization"):
+            query = query.filter_by(user_id=current_user(request, session).user_id)
+        record = query.first()
         if not record:
             raise HTTPException(status_code=404, detail="Promotion not found")
         from app.promotion.service import _response
@@ -59,11 +74,18 @@ def list_promotion_assets(promotion_id: str):
 
 
 @router.post("/promotions/{promotion_id}/telegram/send")
-async def send_promotion_to_merchant(promotion_id: str, merchant_id: str):
+async def send_promotion_to_merchant(promotion_id: str, merchant_id: str, request: Request):
     with SessionLocal() as session:
+        user = current_user(request, session) if request.headers.get("Authorization") else None
         binding = session.query(TelegramBinding).filter_by(merchant_id=merchant_id).first()
-        promotion = session.query(PromotionRecord).filter_by(promotion_id=promotion_id, merchant_id=merchant_id).first()
-        assets = session.query(AssetRecord).filter_by(promotion_id=promotion_id, merchant_id=merchant_id).all()
+        promotion_query = session.query(PromotionRecord).filter_by(promotion_id=promotion_id, merchant_id=merchant_id)
+        asset_query = session.query(AssetRecord).filter_by(promotion_id=promotion_id, merchant_id=merchant_id)
+        if user:
+            binding = session.query(TelegramBinding).filter_by(merchant_id=merchant_id, user_id=user.user_id).first()
+            promotion_query = promotion_query.filter_by(user_id=user.user_id)
+            asset_query = asset_query.filter_by(user_id=user.user_id)
+        promotion = promotion_query.first()
+        assets = asset_query.all()
         if not promotion or not binding:
             raise HTTPException(status_code=404, detail="Promotion or linked merchant chat not found")
         content = __import__("json").loads(promotion.content_json)
@@ -81,25 +103,44 @@ async def send_promotion_to_merchant(promotion_id: str, merchant_id: str):
 
 
 @router.post("/orders", response_model=OrderResponse)
-def create_customer_order(request: OrderCreate):
+def create_customer_order(request: OrderCreate, http_request: Request):
     with SessionLocal() as session:
         order = create_order(session, request)
+        if http_request.headers.get("Authorization"):
+            order.user_id = current_user(http_request, session).user_id
+            session.commit()
         return _order_response(order)
 
 
 @router.get("/orders/{order_id}", response_model=OrderResponse)
-def get_order(order_id: str, merchant_id: str):
+def get_order(order_id: str, merchant_id: str, request: Request):
     with SessionLocal() as session:
-        order = session.query(__import__("app.db.models", fromlist=["OrderRecord"]).OrderRecord).filter_by(order_id=order_id, merchant_id=merchant_id).first()
+        query = session.query(__import__("app.db.models", fromlist=["OrderRecord"]).OrderRecord).filter_by(order_id=order_id, merchant_id=merchant_id)
+        if request.headers.get("Authorization"):
+            query = query.filter_by(user_id=current_user(request, session).user_id)
+        order = query.first()
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
         return _order_response(order)
 
 
 @router.post("/orders/{order_id}/transition", response_model=OrderResponse)
-def update_order(order_id: str, merchant_id: str, status: OrderStatus):
+def update_order(order_id: str, merchant_id: str, status: OrderStatus, request: Request):
     with SessionLocal() as session:
+        if request.headers.get("Authorization"):
+            current_user(request, session)
         return _order_response(transition_order(session, order_id, status, merchant_id))
+
+
+@router.get("/orders")
+def list_orders(request: Request, merchant_id: str | None = None):
+    with SessionLocal() as session:
+        query = session.query(__import__("app.db.models", fromlist=["OrderRecord"]).OrderRecord)
+        if request.headers.get("Authorization"):
+            query = query.filter_by(user_id=current_user(request, session).user_id)
+        elif merchant_id:
+            query = query.filter_by(merchant_id=merchant_id)
+        return [_order_response(order) for order in query.order_by(__import__("app.db.models", fromlist=["OrderRecord"]).OrderRecord.created_at.desc()).all()]
 
 
 @router.post("/orders/{order_id}/payment-instructions")

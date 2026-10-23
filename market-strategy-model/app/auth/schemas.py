@@ -12,6 +12,11 @@ class AuthResponse(BaseModel):
     onboarding_complete: bool
 
 
+class PinChangeRequest(BaseModel):
+    current_pin: str = Field(min_length=6, max_length=12, pattern=r"^\d+$")
+    new_pin: str = Field(min_length=6, max_length=12, pattern=r"^\d+$")
+
+
 class ProductProfile(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     description: str = Field(min_length=1, max_length=2000)
@@ -39,4 +44,3 @@ class ShopProfileRequest(BaseModel):
     products: list[ProductProfile] = Field(default_factory=list, max_length=30)
     objective: str = Field(default="increase_qualified_inquiries", max_length=80)
     constraints: list[str] = Field(default_factory=list, max_length=30)
-
