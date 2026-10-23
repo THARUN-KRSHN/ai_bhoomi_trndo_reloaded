@@ -75,7 +75,7 @@ async def generate_strategy(request: BusinessRequest, tavily: TavilyProvider, yo
         try:
             report = await refine_report(
                 AsyncOpenAI(api_key=settings.openai_api_key),
-                settings.openai_model,
+                settings.openai_text_model_effective,
                 request,
                 evidence,
                 report,

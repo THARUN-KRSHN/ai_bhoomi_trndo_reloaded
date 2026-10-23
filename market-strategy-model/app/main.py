@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.config import get_settings
 from app.db.database import Base, engine
+from app.promotion.routes import router as promotion_router
+from app.db import models  # noqa: F401
+from app.telegram.routes import router as telegram_router
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title=get_settings().app_name, version="1.0.0")
@@ -15,6 +18,8 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 app.include_router(router)
+app.include_router(promotion_router)
+app.include_router(telegram_router)
 
 
 @app.get("/health")
