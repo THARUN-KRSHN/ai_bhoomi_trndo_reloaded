@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trendo AI</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: Inter, system-ui, sans-serif; margin: 0; background: #0b1020; color: #e5e7eb; }
+    .wrap { max-width: 1180px; margin: 40px auto; padding: 0 16px; }
+    .card { background: #121a33; border: 1px solid #243056; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+    h1 { margin: 0 0 10px; font-size: 28px; }
+    p { color: #9ca3af; margin-top: 0; }
+    input, button { font-size: 15px; border-radius: 10px; border: 1px solid #2f3b68; }
+    input { width: min(680px, 100%); padding: 12px; background: #0f1730; color: #fff; }
+    button { padding: 12px 16px; background: #4660ff; color: #fff; cursor: pointer; margin-left: 8px; }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill { display: inline-block; padding: 6px 10px; border-radius: 999px; background: #1a2547; border: 1px solid #2f3b68; margin: 4px 6px 0 0; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #223056; }
+    .muted { color: #9ca3af; }
+    .error { color: #fca5a5; white-space: pre-wrap; }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .kpi { background: #0f1730; border: 1px solid #26325d; border-radius: 12px; padding: 10px; }
+    .kpi .label { font-size: 12px; color: #9ca3af; }
+    .kpi .value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+    .bar { height: 8px; background: #1c264a; border-radius: 999px; overflow: hidden; }
+    .bar > span { height: 100%; display: block; background: linear-gradient(90deg, #4660ff, #7c94ff); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; border: 1px solid #2f3b68; }
+    .badge.good { color: #86efac; border-color: #14532d; background: #052e16; }
+    .badge.mid { color: #fde68a; border-color: #713f12; background: #422006; }
+    .badge.low { color: #fca5a5; border-color: #7f1d1d; background: #450a0a; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .product { background: #0f1730; border: 1px solid #26325d; border-radius: 12px; overflow: hidden; }
+    .product img { width: 100%; height: 160px; object-fit: cover; display: block; background: #0b1020; }
+    .product .body { padding: 10px; }
+    .product .title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .stats { font-size: 12px; color: #9ca3af; }
+    .brand-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .studio-link, .integration-card a { display: inline-block; padding: 10px 14px; border-radius: 999px; background: #4660ff; color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .studio-link:hover, .integration-card a:hover { background: #7c94ff; }
+    .integration-card { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .integration-card strong { color: #fff; }
+    .integration-card span { color: #9ca3af; flex: 1; min-width: 240px; }
+    .integration-card a { background: #1a2547; border: 1px solid #4660ff; }
+    @media (max-width: 640px) { .brand-row { flex-direction: column; } .studio-link { width: fit-content; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand-row">
+        <div>
+          <h1>TRNDO AI</h1>
+          <p>Trend Discovery · The first step in your marketing workflow</p>
+        </div>
+        <a class="studio-link" href="/marketing-studio">Open Marketing Studio →</a>
+      </div>
+      <p>Enter your business to discover search signals, then continue into the same product to create a strategy, poster, Telegram campaign and order workflow.</p>
+      <div class="row">
+        <input id="business" placeholder="e.g. women clothing store, bakery, mobile accessories" />
+        <button id="run">Analyze Trends</button>
+      </div>
+
+      <div class="card integration-card">
+        <strong>One TRNDO workflow</strong>
+        <span>Discover signals here → build strategy in Marketing Studio → create and share your promotion.</span>
+        <a href="/marketing-studio">Continue to Marketing Studio</a>
+      </div>
+      <p class="muted" id="status"></p>
+      <p class="error" id="error"></p>
+    </div>
+
+    <div class="card" id="keywordsCard" style="display:none;">
+      <h3>Dashboard</h3>
+      <div class="kpis" id="kpis"></div>
+      <p class="muted" id="metaLine"></p>
+      <p class="error" id="warnLine"></p>
+    </div>
+
+    <div class="card" id="keywordsCard2" style="display:none;">
+      <h3>Generated Keywords</h3>
+      <div id="keywords"></div>
+    </div>
+
+    <div class="card" id="topCard" style="display:none;">
+      <h3>Top Trending Products</h3>
+      <table>
+        <thead><tr><th>#</th><th>Keyword</th><th>Score</th><th>Reliability</th></tr></thead>
+        <tbody id="topRows"></tbody>
+      </table>
+      <p class="muted" id="relSummary"></p>
+    </div>
+
+    <div class="card" id="galleryCard" style="display:none;">
+      <h3>Product Visual Dashboard</h3>
+      <div class="grid" id="gallery"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const businessEl = $('business');
+    const runBtn = $('run');
+    const statusEl = $('status');
+    const errorEl = $('error');
+    const keywordsCard = $('keywordsCard');
+    const keywordsCard2 = $('keywordsCard2');
+    const keywordsEl = $('keywords');
+    const kpisEl = $('kpis');
+    const metaLine = $('metaLine');
+    const warnLine = $('warnLine');
+    const topCard = $('topCard');
+    const topRows = $('topRows');
+    const relSummary = $('relSummary');
+    const galleryCard = $('galleryCard');
+    const galleryEl = $('gallery');
+
+    async function run() {
+      const business = businessEl.value.trim();
+      errorEl.textContent = '';
+      statusEl.textContent = '';
+      if (!business) {
+        errorEl.textContent = 'Enter business first.';
+        return;
+      }
+
+      runBtn.disabled = true;
+      statusEl.textContent = 'Analyzing... (can take ~20-40s due to Google Trends throttling)';
+
+      try {
+        const res = await fetch('/get_trends', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ business })
+        });
+        const data = await res.json();
+        if (!res.ok || data.status !== 'success') {
+          throw new Error(JSON.stringify(data));
+        }
+
+        // Keywords
+        kpisEl.innerHTML = '';
+        const total = data.analysis?.total_keywords_analyzed || 0;
+        const top1 = ((data.analysis?.top_10 || [])[0] || {}).score || 0;
+        const avgRel = data.analysis?.reliability_summary?.avg_reliability || 0;
+        const provider = data.trends_meta?.provider || '-';
+        [
+          { label: 'Keywords Analyzed', value: total },
+          { label: 'Top Trend Score', value: top1 },
+          { label: 'Avg Reliability', value: avgRel },
+          { label: 'Provider', value: provider },
+        ].forEach(k => {
+          const box = document.createElement('div');
+          box.className = 'kpi';
+          box.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div>`;
+          kpisEl.appendChild(box);
+        });
+        metaLine.textContent = `Model: ${data.model} | Timeline points: ${data.trends_meta?.timeline_points ?? 0} | Batches: ${data.trends_meta?.batches ?? 0}`;
+        const errs = data.trends_errors || [];
+        warnLine.textContent = errs.length ? `Warnings: ${errs.slice(0,3).join(' | ')}` : '';
+
+        keywordsEl.innerHTML = '';
+        (data.keywords || []).forEach(k => {
+          const span = document.createElement('span');
+          span.className = 'pill';
+          span.textContent = k;
+          keywordsEl.appendChild(span);
+        });
+        keywordsCard.style.display = 'block';
+        keywordsCard2.style.display = 'block';
+
+        // Top table
+        topRows.innerHTML = '';
+        const top = (data.analysis && data.analysis.top_10) || [];
+        top.forEach((item, i) => {
+          const reliability = Number(item.reliability_score ?? 0);
+          const badgeClass = reliability >= 65 ? 'good' : reliability >= 45 ? 'mid' : 'low';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${item.keyword}<div class="bar"><span style="width:${Math.min(Number(item.score)||0,100)}%"></span></div></td>
+            <td>${item.score}</td>
+            <td><span class="badge ${badgeClass}">${reliability}</span></td>
+          `;
+          topRows.appendChild(tr);
+        });
+        const rs = data.analysis?.reliability_summary || {};
+        relSummary.textContent = `Reliability avg: ${rs.avg_reliability ?? 0} | min: ${rs.min_reliability ?? 0} | max: ${rs.max_reliability ?? 0}`;
+        topCard.style.display = 'block';
+
+        // Image dashboard
+        galleryEl.innerHTML = '';
+        const imageMap = data.product_images || {};
+        top.forEach((item) => {
+          const list = imageMap[item.keyword] || [];
+          const first = list[0] || {};
+          const img = first.thumbnail || first.original || '';
+          const reliability = Number(item.reliability_score ?? 0);
+          const badgeClass = reliability >= 65 ? 'good' : reliability >= 45 ? 'mid' : 'low';
+          const card = document.createElement('div');
+          card.className = 'product';
+          card.innerHTML = `
+            <img src="${img}" alt="${item.keyword}" onerror="this.style.display='none'" />
+            <div class="body">
+              <div class="title">${item.keyword}</div>
+              <div class="stats">Trend: ${item.score}</div>
+              <div class="stats"><span class="badge ${badgeClass}">Reliability ${reliability}</span></div>
+            </div>
+          `;
+          galleryEl.appendChild(card);
+        });
+        galleryCard.style.display = 'block';
+
+        statusEl.textContent = `Done. ${data.analysis?.total_keywords_analyzed || 0} keywords analyzed.`;
+      } catch (err) {
+        errorEl.textContent = 'Request failed. ' + (err?.message || err);
+      } finally {
+        runBtn.disabled = false;
+      }
+    }
+
+    runBtn.addEventListener('click', run);
+    businessEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') run();
+    });
+  </script>
+</body>
+</html>
