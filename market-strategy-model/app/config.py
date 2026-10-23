@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     enable_ai_background_art: bool = False
     promotion_demo_mode: bool = True
     default_monthly_promotion_limit: int = 5
+    trend_finder_base_url: str = "http://127.0.0.1:5000"
+    trend_finder_timeout_seconds: float = 60.0
+    auth_session_ttl_hours: int = 24
+    auth_max_login_attempts: int = 5
+    auth_lockout_minutes: int = 15
 
     @property
     def cors_origins(self) -> list[str]:

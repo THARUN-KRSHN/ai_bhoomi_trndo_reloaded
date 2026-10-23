@@ -1,0 +1,51 @@
+import json
+from fastapi import APIRouter, Request
+
+from app.auth.schemas import AuthRequest, AuthResponse, ShopProfileRequest
+from app.auth.service import current_user, login, register, save_profile
+from app.db.database import SessionLocal
+from app.db.models import ShopProfile
+
+router = APIRouter(prefix="/api/v1/auth")
+
+
+@router.post("/register", response_model=AuthResponse)
+def register_user(payload: AuthRequest):
+    with SessionLocal() as session:
+        user, token = register(session, payload.phone_number, payload.pin)
+        session.commit()
+        return AuthResponse(access_token=token, user_id=user.user_id, onboarding_complete=user.onboarding_complete)
+
+
+@router.post("/login", response_model=AuthResponse)
+def login_user(payload: AuthRequest):
+    with SessionLocal() as session:
+        user, token = login(session, payload.phone_number, payload.pin)
+        return AuthResponse(access_token=token, user_id=user.user_id, onboarding_complete=user.onboarding_complete)
+
+
+@router.get("/me")
+def get_me(request: Request):
+    with SessionLocal() as session:
+        user = current_user(request, session)
+        return {"user_id": user.user_id, "phone_number": user.phone_number, "onboarding_complete": user.onboarding_complete}
+
+
+profile_router = APIRouter(prefix="/api/v1")
+
+
+@profile_router.get("/profile")
+def get_profile(request: Request):
+    with SessionLocal() as session:
+        user = current_user(request, session)
+        profile = session.query(ShopProfile).filter_by(user_id=user.user_id).first()
+        return {"profile": json.loads(profile.profile_json), "version": profile.version} if profile else {"profile": None, "version": 0}
+
+
+@profile_router.put("/profile")
+@profile_router.patch("/profile")
+def update_profile(payload: ShopProfileRequest, request: Request):
+    with SessionLocal() as session:
+        user = current_user(request, session)
+        profile = save_profile(session, user, payload.model_dump())
+        return {"profile": json.loads(profile.profile_json), "version": profile.version}

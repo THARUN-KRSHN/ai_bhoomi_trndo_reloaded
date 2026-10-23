@@ -99,6 +99,25 @@ python -m compileall app tests
 
 ## Frontend integration
 
+## Authentication, shop profiles, and Trend Finder adapter
+
+The backend now exposes the first account-integrated workflow:
+
+```text
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+GET  /api/v1/auth/me
+GET  /api/v1/profile
+PUT  /api/v1/profile
+PATCH /api/v1/profile
+POST /api/v1/trends/search
+GET  /api/v1/trends/search/{search_id}
+```
+
+Registration and login use a phone number plus numeric PIN. PINs are stored only as Argon2id hashes. Sessions are opaque, hashed bearer tokens with an expiration; failed logins are counted and temporarily locked after the configured threshold. Shop profiles and trend-search results are stored per authenticated user.
+
+Set `TREND_FINDER_BASE_URL` (default `http://127.0.0.1:5000`) to the Flask service. The adapter calls the existing `/get_trends` contract with the topic, saved profile context, and explicit filters, then persists the returned payload without recalculating its scores. `TREND_FINDER_TIMEOUT_SECONDS` controls the request timeout. If demo mode is disabled, Trend Finder failures are returned as errors rather than fabricated results.
+
 The sibling `frontend` directory contains the Next.js Marketing Studio. Start the backend first, then run the frontend with:
 
 ```powershell
