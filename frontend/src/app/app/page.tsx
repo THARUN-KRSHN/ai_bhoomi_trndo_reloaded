@@ -282,7 +282,33 @@ export default function ShopHomePage() {
 
           {/* Trend Cards Grid with small more arrow on bottom left */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {trends.length > 0 ? (
+            {loadingTrends ? (
+              // Skeleton cards during trend loading
+              [1, 2, 3, 4].map((i) => (
+                <div
+                  key={`dashboard-skel-${i}`}
+                  className="p-5 rounded-2xl bg-[#F4F4F1] border border-[#E4E6E1] flex flex-col justify-between space-y-4 animate-pulse shadow-2xs"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="h-4 w-16 bg-[#E3FAEC] rounded-full" />
+                      <div className="h-4 w-12 bg-[#E8EAE5] rounded-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-5 w-4/5 bg-[#DFE2DC] rounded-md" />
+                      <div className="h-3.5 w-full bg-[#E8EAE5] rounded-md" />
+                    </div>
+                    <div className="w-full h-20 rounded-xl bg-[#E8EAE5] border border-[#E4E6E1]/60 flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-[#A0A49F] animate-spin" />
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-[#E4E6E1]/70 flex items-center justify-between">
+                    <div className="h-3.5 w-20 bg-[#E8EAE5] rounded-md" />
+                    <div className="h-3.5 w-16 bg-[#E8EAE5] rounded-md" />
+                  </div>
+                </div>
+              ))
+            ) : trends.length > 0 ? (
               trends.map((item, idx) => (
                 <div
                   key={idx}
@@ -327,7 +353,7 @@ export default function ShopHomePage() {
               ))
             ) : (
               <div className="col-span-full py-8 text-center text-xs text-[#70736F]">
-                {loadingTrends ? "Loading personalized trends from Trend Finder…" : "No trends retrieved yet."}
+                No trends retrieved yet. Tap Refresh Trends to search.
               </div>
             )}
           </div>
@@ -619,6 +645,39 @@ export default function ShopHomePage() {
                   Surging search interest identified for your {shopCategory} category in {shopCity}, Kerala.
                 </p>
               </div>
+
+              {/* Product Visual Showcase */}
+              {selectedTrendForDetails.thumbnail && (
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#70736F] block">
+                    Product Visual &amp; Trend Reference
+                  </span>
+                  <div className="relative rounded-2xl overflow-hidden border border-[#E4E6E1] bg-[#F4F4F1] group shadow-xs">
+                    <img
+                      src={selectedTrendForDetails.thumbnail}
+                      alt={selectedTrendForDetails.keyword}
+                      className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-between p-3">
+                      <span className="text-white text-[11px] font-bold">
+                        Verified Trend Photo
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const kw = selectedTrendForDetails.keyword;
+                          const img = selectedTrendForDetails.thumbnail || "";
+                          setSelectedTrendForDetails(null);
+                          router.push(`/marketing-studio/create?product=${encodeURIComponent(kw)}&image=${encodeURIComponent(img)}`);
+                        }}
+                        className="px-3 py-1 rounded-full bg-[#70F0A6] hover:bg-white text-[#0C3D2D] text-[10px] font-black transition-colors"
+                      >
+                        Use in Poster &rarr;
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Score Calculation Bento */}
               <div className="space-y-3">

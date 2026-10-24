@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   BookmarkCheck,
@@ -19,15 +19,24 @@ import { OpportunitySummaryCard } from "@/components/brief/OpportunitySummaryCar
 import { EditSectionModal, SectionType } from "@/components/brief/EditSectionModal";
 import { Accordion } from "@/components/ui/Accordion";
 
-export default function StrategyBriefPage() {
+function StrategyBriefContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const productParam = searchParams.get("product");
   const {
     selectedOpportunity,
+    selectOpportunityFromTrend,
     brief,
     updateBrief,
     saveDraft,
     isDraftSaved,
   } = useStrategy();
+
+  useEffect(() => {
+    if (productParam && productParam !== selectedOpportunity?.default_product?.name) {
+      selectOpportunityFromTrend(productParam);
+    }
+  }, [productParam, selectedOpportunity, selectOpportunityFromTrend]);
 
   const [activeEditSection, setActiveEditSection] = useState<SectionType | null>(null);
 
@@ -298,5 +307,13 @@ export default function StrategyBriefPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function StrategyBriefPage() {
+  return (
+    <Suspense fallback={<div className="p-12 text-center text-xs text-[#70736F]">Loading brief configuration…</div>}>
+      <StrategyBriefContent />
+    </Suspense>
   );
 }

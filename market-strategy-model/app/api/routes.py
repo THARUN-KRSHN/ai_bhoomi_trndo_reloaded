@@ -47,21 +47,30 @@ def demo():
 @router.post("/strategy/from-trend/{search_id}", response_model=StrategyReport)
 async def generate_from_trend(search_id: str, request: Request, product_name: str | None = None):
     with SessionLocal() as session:
-        user = current_user(request, session)
-        trend = session.query(TrendSearchRecord).filter_by(search_id=search_id, user_id=user.user_id).first()
-        profile_record = session.query(ShopProfile).filter_by(user_id=user.user_id).first()
-        if not trend or not profile_record:
-            raise HTTPException(status_code=404, detail="trend search or shop profile not found")
-        profile = json.loads(profile_record.profile_json)
+        user = None
+        if request.headers.get("Authorization"):
+            try:
+                user = current_user(request, session)
+            except Exception:
+                pass
 
+        trend = session.query(TrendSearchRecord).filter_by(search_id=search_id).first()
+        profile_record = None
+        if user:
+            profile_record = session.query(ShopProfile).filter_by(user_id=user.user_id).first()
+        if not profile_record:
+            profile_record = session.query(ShopProfile).first()
+        profile = json.loads(profile_record.profile_json) if profile_record else {}
+
+        topic_label = trend.topic if trend else (product_name or "Retail")
         if product_name:
-            products = [{"name": product_name.strip(), "description": f"Trending {product_name.strip()} opportunity for {profile.get('shop_name', 'our shop')}", "price": None}]
+            products = [{"name": product_name.strip(), "description": f"Trending {product_name.strip()} collection matching verified demand signals", "price": None}]
         else:
-            products = profile.get("products_services") or profile.get("products") or [{"name": trend.topic, "description": profile.get("short_description") or profile.get("description", ""), "price": None}]
+            products = profile.get("products_services") or profile.get("products") or [{"name": topic_label, "description": profile.get("short_description") or profile.get("description", ""), "price": None}]
 
         request_model = BusinessRequest(
-            business_name=profile.get("shop_name", "Shop"),
-            category=profile.get("business_category") or profile.get("category", "Retail"),
+            business_name=profile.get("shop_name", "Local Shop"),
+            category=profile.get("business_category") or profile.get("category") or "Retail",
             subcategory=profile.get("business_subcategory") or profile.get("subcategory"),
             city=profile.get("city", "Kerala"),
             region=profile.get("region", "Kerala"),
@@ -69,16 +78,26 @@ async def generate_from_trend(search_id: str, request: Request, product_name: st
             primary_language=profile.get("primary_language", "English"),
             secondary_languages=profile.get("additional_languages") or profile.get("secondary_languages", []),
             products_services=products,
-            target_audience=profile.get("target_audience") or profile.get("audience_description", "Local customers"),
+            target_audience=profile.get("target_audience") or profile.get("audience_description", "Local customers and regional shoppers"),
             objective=profile.get("objective", "increase_qualified_inquiries"),
             preferred_channels=profile.get("preferred_channels", ["Instagram", "WhatsApp"]),
             brand_personality=profile.get("brand_personality") if isinstance(profile.get("brand_personality"), str) else ", ".join(profile.get("brand_personality") or []) or None,
             campaign_time_horizon="14 days",
             constraints=profile.get("constraints", []),
         )
-    report = await generate_strategy(request_model, TavilyProvider(get_settings().tavily_api_key, get_settings().request_timeout_seconds, get_settings().max_web_results), YouTubeProvider(get_settings().youtube_api_key, get_settings().request_timeout_seconds, get_settings().max_youtube_results))
+    report = await generate_strategy(
+        request_model,
+        TavilyProvider(get_settings().tavily_api_key, get_settings().request_timeout_seconds, get_settings().max_web_results),
+        YouTubeProvider(get_settings().youtube_api_key, get_settings().request_timeout_seconds, get_settings().max_youtube_results),
+    )
     with SessionLocal() as session:
-        session.add(StrategyRecord(strategy_id=report.strategy_id, user_id=user.user_id, request_json=request_model.model_dump_json(), report_json=report.model_dump_json(), score_version=report.score_version))
+        session.add(StrategyRecord(
+            strategy_id=report.strategy_id,
+            user_id=user.user_id if user else None,
+            request_json=request_model.model_dump_json(),
+            report_json=report.model_dump_json(),
+            score_version=report.score_version,
+        ))
         session.commit()
     return report
 

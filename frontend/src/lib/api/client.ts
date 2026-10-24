@@ -320,6 +320,25 @@ export async function uploadShopLogo(file: File) {
   return res.json() as Promise<{ asset_id: string; logo_url: string; filename: string }>;
 }
 
+export async function uploadPromotionAsset(file: File, assetType: "logo" | "product_image", merchantId = "development-merchant") {
+  const formData = new FormData();
+  formData.append("merchant_id", merchantId);
+  formData.append("asset_type", assetType);
+  formData.append("file", file);
+  const token = typeof window !== "undefined" ? sessionStorage.getItem("trndo_access_token") : null;
+  const res = await fetch(`${API_BASE_URL}/api/v1/promotions/assets`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  });
+  if (!res.ok) {
+    throw new ApiError(`Failed to upload ${assetType}`, res.status);
+  }
+  return res.json() as Promise<{ asset_id: string; asset_type: string; width: number; height: number }>;
+}
+
 export async function getTelegramLinkToken(merchantId = "merchant") {
   return request<{ token: string; expires_in_seconds: number; deep_link: string }>(`/api/v1/telegram/link-token?merchant_id=${encodeURIComponent(merchantId)}`, {
     method: "POST",

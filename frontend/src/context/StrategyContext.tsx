@@ -7,11 +7,12 @@ import {
   StrategyReport,
   Objective,
 } from "@/lib/api/types";
-import { DEMO_OPPORTUNITIES } from "@/lib/demo/opportunities";
+import { DEMO_OPPORTUNITIES, createOpportunityFromTrend } from "@/lib/demo/opportunities";
 
 interface StrategyContextType {
   selectedOpportunity: DemoOpportunity;
   selectOpportunity: (opp: DemoOpportunity) => void;
+  selectOpportunityFromTrend: (keyword: string, score?: number, category?: string, city?: string) => void;
   brief: BusinessRequest;
   updateBrief: (partial: Partial<BusinessRequest>) => void;
   currentReport: StrategyReport | null;
@@ -30,7 +31,7 @@ const STORAGE_KEY_REPORTS = "trndo_strategy_reports_cache";
 
 function createInitialBrief(opp: DemoOpportunity): BusinessRequest {
   return {
-    business_name: "Artisan Studio Kochi",
+    business_name: "TRNDO Business",
     category: opp.category,
     subcategory: opp.subcategory,
     city: opp.city,
@@ -48,17 +49,17 @@ function createInitialBrief(opp: DemoOpportunity): BusinessRequest {
     preferred_channels: ["instagram", "whatsapp"],
     budget_type: "organic",
     budget_amount: null,
-    brand_personality: "minimal, aesthetic, creative",
-    product_positioning: "Understated artisan celebration cakes with transparent WhatsApp ordering",
+    brand_personality: "modern, quality-driven, aesthetic",
+    product_positioning: `${opp.title} tailored for verified regional demand and customer interest`,
     desired_tone: "warm, refined, helpful",
     campaign_time_horizon: "14 days",
     constraints: [
       "Do not discount below the approved price floor",
       "Do not claim availability beyond verified weekly batch capacity",
     ],
-    approved_price_floor: opp.default_product.price ? Number(opp.default_product.price) : 850,
+    approved_price_floor: opp.default_product.price ? Number(opp.default_product.price) : 500,
     maximum_discount: null,
-    fulfilment_capacity: opp.default_product.stock_or_capacity || 15,
+    fulfilment_capacity: opp.default_product.stock_or_capacity || 25,
     preferred_content_formats: ["short video", "carousel menu", "unboxing story"],
   };
 }
@@ -91,7 +92,15 @@ export function StrategyProvider({ children }: { children: React.ReactNode }) {
 
       const savedBrief = localStorage.getItem(STORAGE_KEY_BRIEF);
       if (savedBrief) {
-        setBrief(JSON.parse(savedBrief));
+        try {
+          const parsed = JSON.parse(savedBrief);
+          if (parsed.product_positioning && parsed.product_positioning.toLowerCase().includes("cake") && activeOpp.category !== "bakery") {
+            parsed.product_positioning = `${activeOpp.title} tailored for verified regional demand`;
+          }
+          setBrief(parsed);
+        } catch {
+          setBrief(createInitialBrief(activeOpp));
+        }
       } else {
         setBrief(createInitialBrief(activeOpp));
       }
@@ -119,7 +128,8 @@ export function StrategyProvider({ children }: { children: React.ReactNode }) {
       country: opp.country,
       products_services: [{ ...opp.default_product }],
       target_audience: opp.target_audience_sample,
-      approved_price_floor: opp.default_product.price ? Number(opp.default_product.price) : 850,
+      product_positioning: `${opp.title} tailored for verified regional demand and customer interest`,
+      approved_price_floor: opp.default_product.price ? Number(opp.default_product.price) : 500,
       fulfilment_capacity: opp.default_product.stock_or_capacity || 15,
     }));
   }, []);
@@ -175,11 +185,20 @@ export function StrategyProvider({ children }: { children: React.ReactNode }) {
     [selectedOpportunity]
   );
 
+  const selectOpportunityFromTrend = useCallback(
+    (keyword: string, score: number = 85, category: string = "Retail & Fashion", city: string = "Kerala") => {
+      const opp = createOpportunityFromTrend(keyword, score, category, city);
+      selectOpportunity(opp);
+    },
+    [selectOpportunity]
+  );
+
   return (
     <StrategyContext.Provider
       value={{
         selectedOpportunity,
         selectOpportunity,
+        selectOpportunityFromTrend,
         brief,
         updateBrief,
         currentReport,

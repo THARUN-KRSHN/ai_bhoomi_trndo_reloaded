@@ -22,7 +22,9 @@ class PromotionRequest(BaseModel):
     merchant_id: str = Field(default="development-merchant", min_length=1, max_length=100)
     product_snapshot: ProductSnapshot | None = None
     brand_asset_id: str | None = None
+    logo_asset_id: str | None = None
     product_image_asset_id: str | None = None
+    product_image_url: str | None = None
     language: str = Field(min_length=2, max_length=80)
     secondary_language: str | None = Field(default=None, max_length=80)
     channels: list[str] = Field(default_factory=list, max_length=10)

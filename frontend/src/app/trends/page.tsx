@@ -295,7 +295,52 @@ function TrendsContent() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {trendResults.length > 0 ? (
+            {busy ? (
+              // Skeleton model loading cards with detail fields and image placeholder
+              [1, 2, 3, 4, 5, 6].map((idx) => (
+                <div
+                  key={`skeleton-trend-${idx}`}
+                  className="p-6 rounded-[24px] bg-white border border-[#E4E6E1] flex flex-col justify-between space-y-4 shadow-xs animate-pulse"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-2">
+                          <div className="h-5 w-24 bg-[#E3FAEC] rounded-full" />
+                          <div className="h-5 w-20 bg-[#F4F4F1] rounded-full" />
+                        </div>
+                        <div className="h-6 w-3/4 bg-[#E8EAE5] rounded-md" />
+                        <div className="h-4 w-1/2 bg-[#F4F4F1] rounded-md" />
+                      </div>
+
+                      {/* Product Image Field Skeleton */}
+                      <div className="w-16 h-16 rounded-xl bg-[#F4F4F1] border border-[#E4E6E1] flex items-center justify-center shrink-0">
+                        <Sparkles className="w-6 h-6 text-[#A0A49F] animate-spin" />
+                      </div>
+                    </div>
+
+                    {/* Signal Waveform / Momentum Details Field Skeleton */}
+                    <div className="p-3.5 rounded-xl bg-[#F8F9F7] border border-[#E4E6E1]/60 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="h-3 w-32 bg-[#E8EAE5] rounded-md" />
+                        <div className="h-3 w-16 bg-[#E8EAE5] rounded-md" />
+                      </div>
+                      <div className="h-7 w-full bg-[#EAECE7] rounded-lg" />
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      <div className="h-3 w-full bg-[#F4F4F1] rounded-md" />
+                      <div className="h-3 w-4/5 bg-[#F4F4F1] rounded-md" />
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-[#E4E6E1] flex items-center justify-between gap-3">
+                    <div className="h-4 w-20 bg-[#F4F4F1] rounded-md" />
+                    <div className="h-8 w-28 bg-[#0C3D2D]/20 rounded-full" />
+                  </div>
+                </div>
+              ))
+            ) : trendResults.length > 0 ? (
               trendResults.map((item, idx) => (
                 <div
                   key={idx}
@@ -359,7 +404,7 @@ function TrendsContent() {
               ))
             ) : (
               <div className="col-span-full py-16 text-center text-xs text-[#70736F] bg-white rounded-[24px] border border-[#E4E6E1]">
-                {busy ? "Analyzing Google Trends and search keywords…" : "Enter a topic above to explore real demand signals."}
+                Enter a topic above to explore real demand signals.
               </div>
             )}
           </div>
@@ -427,16 +472,67 @@ function TrendsContent() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedDetail(null);
-                  handleBuildStrategy(selectedDetail.keyword);
-                }}
-                className="w-full py-3 rounded-full bg-[#0C3D2D] text-[#70F0A6] font-bold text-xs hover:bg-[#14523E] transition-colors"
-              >
-                Build Strategy Around This Trend &rarr;
-              </button>
+              {/* Product Visual Showcase */}
+              {selectedDetail.thumbnail && (
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#70736F] block">
+                    Product Visual &amp; Trend Reference
+                  </span>
+                  <div className="relative rounded-2xl overflow-hidden border border-[#E4E6E1] bg-[#F4F4F1] group shadow-xs">
+                    <img
+                      src={selectedDetail.thumbnail}
+                      alt={selectedDetail.keyword}
+                      className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-between p-3">
+                      <span className="text-white text-[11px] font-bold">
+                        Verified Trend Photo
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const kw = selectedDetail.keyword;
+                          const img = selectedDetail.thumbnail || "";
+                          setSelectedDetail(null);
+                          router.push(`/marketing-studio/create?product=${encodeURIComponent(kw)}&image=${encodeURIComponent(img)}`);
+                        }}
+                        className="px-3 py-1 rounded-full bg-[#70F0A6] hover:bg-white text-[#0C3D2D] text-[10px] font-black transition-colors"
+                      >
+                        Use in Poster &rarr;
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons: Build Strategy OR Create Poster Directly */}
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const kw = selectedDetail.keyword;
+                    const img = selectedDetail.thumbnail || "";
+                    setSelectedDetail(null);
+                    router.push(`/marketing-studio/create?product=${encodeURIComponent(kw)}&image=${encodeURIComponent(img)}`);
+                  }}
+                  className="w-full py-3 rounded-full bg-[#E3FAEC] hover:bg-[#d0f7df] text-[#0C3D2D] font-bold text-xs border border-[#70F0A6] transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#0C3D2D]" />
+                  <span>Create Campaign Poster with This Product</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDetail(null);
+                    handleBuildStrategy(selectedDetail.keyword);
+                  }}
+                  className="w-full py-3 rounded-full bg-[#0C3D2D] text-[#70F0A6] font-bold text-xs hover:bg-[#14523E] transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <span>Build Strategy Around This Trend</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           )}
         </Drawer>

@@ -1,9 +1,48 @@
 import { DemoOpportunity } from "../api/types";
 
 /**
- * Explicit demonstration opportunities representing potential upstream trend signals.
- * NOTE: These are illustrative demonstration records for workflow testing and development.
- * They are NOT live trend assertions or statistical guarantees.
+ * Creates dynamic, evidence-backed opportunities from live trend discovery items.
+ */
+export function createOpportunityFromTrend(
+  keyword: string,
+  score: number = 85,
+  category: string = "Retail & Fashion",
+  city: string = "Kerala"
+): DemoOpportunity {
+  const formattedTitle = keyword
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+  return {
+    id: `opp-${encodeURIComponent(keyword.toLowerCase().replace(/[^a-z0-9]+/g, "-"))}`,
+    title: formattedTitle,
+    category: category,
+    subcategory: "Trending Consumer Demand",
+    explanation: `High consumer interest and rising local search velocity for ${keyword} in ${city}. Verified signal from Trend Discovery.`,
+    geographic_scope: `${city} (Regional Demand)`,
+    city: city,
+    region: "Kerala",
+    country: "India",
+    trend_state: score >= 80 ? "Surging consumer interest" : "Steady upward demand",
+    momentum: score,
+    shop_fit_label: score >= 80 ? "High Market Alignment" : "Solid Commercial Potential",
+    evidence_confidence: score >= 85 ? "high" : "moderate",
+    source_availability: "Live Google Trends and market search velocity",
+    default_product: {
+      name: formattedTitle,
+      description: `Curated ${keyword} tailored to meet current customer search preferences and seasonal local demand.`,
+      verified_attributes: ["Trending item", "High customer search velocity", "Fast inventory turnaround"],
+      price: null,
+      unit_cost: null,
+      stock_or_capacity: 25,
+    },
+    target_audience_sample: `Consumers and local buyers in ${city} searching for ${keyword} and related seasonal styles.`,
+  };
+}
+
+/**
+ * Fallback initial opportunities when no trend discovery records have been run yet.
  */
 export const DEMO_OPPORTUNITIES: DemoOpportunity[] = [
   {

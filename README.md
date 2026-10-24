@@ -2,6 +2,25 @@
 
 TRNDO AI is a local-first marketing workspace for small businesses. It combines an evidence-grounded market strategy backend with a visual Marketing Studio for turning an approved strategy into promotional creatives, Telegram enquiries, orders, and payment instructions.
 
+## Product overview
+
+TRNDO is one product implemented as three independently runnable services:
+
+1. **Trend Finder** discovers current search and web signals using the existing
+   Flask application. It preserves the existing trend scoring and SerpApi
+   integration.
+2. **Market Strategy API** is the central FastAPI service. It owns accounts,
+   shop profiles, trend-search persistence, evidence handling, deterministic
+   opportunity scoring, structured strategy generation, promotions, orders,
+   Telegram integration, and UPI payment instructions.
+3. **Frontend** is the Next.js application. It provides registration,
+   onboarding, authenticated trend discovery, strategy reports, Marketing
+   Studio, promotion galleries, inbox, and order workflows.
+
+The frontend calls FastAPI. FastAPI calls Flask for trend discovery. The
+browser never calls provider APIs directly and never receives provider
+credentials.
+
 ## Repository structure
 
 ```text
@@ -12,6 +31,30 @@ ai_bhoomi/
 ```
 
 The backend remains the source of truth for strategy scoring, evidence, promotion generation, order totals, state transitions, and UPI instructions. The frontend does not invent market claims or payment confirmations.
+
+## Request flow
+
+```text
+Browser
+  │
+  ├── account/profile/trend/strategy/promotion/order requests
+  ▼
+Next.js frontend ── authenticated HTTP ──► FastAPI Strategy API
+                                             │
+                                             ├── PostgreSQL or SQLite
+                                             ├── OpenAI Responses API
+                                             ├── Tavily
+                                             ├── YouTube Data API
+                                             └── HTTP adapter ──► Flask Trend Finder
+                                                                    │
+                                                                    ├── Groq
+                                                                    ├── SerpApi
+                                                                    └── Gemini
+```
+
+Trend articles, search results, and video metadata are evidence or attention
+signals. They are not treated as quantitative momentum. Momentum is returned
+as unavailable unless comparable historical observations are provided.
 
 ## Requirements
 
@@ -135,6 +178,61 @@ npx eslint src/app/marketing-studio src/components/marketing src/lib/api/client.
 ```
 
 The validation commands should be run from the respective project directories. Do not use a globally installed Python or a different virtual environment when validating the backend.
+
+The production gate is `npm run build` plus `npx tsc --noEmit`; both must pass
+before deploying the frontend. The repository currently has known ESLint
+diagnostics in older interactive pages, primarily React
+`set-state-in-effect` warnings promoted to errors and unused imports. These
+should be cleaned up in a dedicated frontend lint pass rather than hidden with
+global rule suppression.
+
+## Environment ownership
+
+| Variable type | Service | Exposed to browser |
+|---|---|---|
+| `NEXT_PUBLIC_API_BASE_URL` | Vercel frontend | Yes |
+| `NEXT_PUBLIC_ENABLE_DEMO_DATA` | Vercel frontend | Yes |
+| OpenAI, Tavily, YouTube, Telegram, UPI | FastAPI Render service | No |
+| `DATABASE_URL` | FastAPI Render service | No |
+| Groq, SerpApi, Gemini | Flask Render service | No |
+
+Use `.env.example` files as templates only. Local `.env` files are ignored and
+must never be committed. Rotate any credential that was accidentally pasted
+into chat, logs, screenshots, or a repository.
+
+## Production checklist
+
+- Deploy Flask, then FastAPI, then Vercel so dependent public URLs are known.
+- Set FastAPI `TREND_FINDER_BASE_URL` to the deployed Flask URL.
+- Set FastAPI `ALLOWED_ORIGINS` to the exact Vercel origin without a trailing
+  slash.
+- Set FastAPI `PUBLIC_BASE_URL` to the public FastAPI URL.
+- Use Render Postgres through `DATABASE_URL`; default Render filesystem
+  storage is not durable.
+- Configure persistent storage or object storage for generated promotion
+  assets.
+- Set `NEXT_PUBLIC_ENABLE_DEMO_DATA=false` for live-only frontend behavior.
+- Use HTTPS for every deployed service and verify `/health` after each deploy.
+- Configure either Telegram webhook delivery or polling, never both for the
+  same bot.
+- Add phone ownership verification, rate limiting, secure HTTP-only cookies,
+  CSRF protection, and database migrations before treating the MVP as a
+  security-complete production system.
+
+## Troubleshooting
+
+- **Frontend says “Failed to fetch”:** confirm the Vercel
+  `NEXT_PUBLIC_API_BASE_URL` points to FastAPI, redeploy Vercel after changing
+  it, and confirm FastAPI `ALLOWED_ORIGINS` exactly matches the Vercel origin.
+- **FastAPI cannot reach trends:** confirm `TREND_FINDER_BASE_URL` points to
+  Flask and that Flask `/health` responds publicly.
+- **FastAPI restarts or loses data:** replace SQLite with Render Postgres and
+  configure durable asset storage.
+- **Category options are empty:** restart/redeploy Flask after changing its
+  environment or source; the endpoint has generic fallbacks when Gemini is
+  unavailable.
+- **Telegram assets do not open:** set `PUBLIC_BASE_URL` to the public FastAPI
+  URL and ensure the asset storage is reachable by the running service.
 
 ## Important limitations
 

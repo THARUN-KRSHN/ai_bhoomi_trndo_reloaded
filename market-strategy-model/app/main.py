@@ -34,8 +34,28 @@ def _add_missing_columns() -> None:
                     connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN user_id VARCHAR(64)"))
 
 
+import asyncio
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    settings = get_settings()
+    polling_task = None
+    if settings.telegram_bot_token and settings.telegram_mode == "polling":
+        from app.telegram.polling import run as run_telegram_polling
+        polling_task = asyncio.create_task(run_telegram_polling())
+    yield
+    if polling_task:
+        polling_task.cancel()
+        try:
+            await polling_task
+        except asyncio.CancelledError:
+            pass
+
+
 _add_missing_columns()
-app = FastAPI(title=get_settings().app_name, version="1.0.0")
+app = FastAPI(title=get_settings().app_name, version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins,

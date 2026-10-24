@@ -44,8 +44,8 @@ class Settings(BaseSettings):
     payment_currency: str = "INR"
     public_base_url: str | None = None
     payment_token_ttl_hours: int = 24
-    openai_image_model: str | None = None
-    enable_ai_background_art: bool = False
+    openai_image_model: str = "gpt-image-1.5"
+    enable_ai_background_art: bool = True
     promotion_demo_mode: bool = True
     default_monthly_promotion_limit: int = 5
     trend_finder_base_url: str = "http://127.0.0.1:5000"

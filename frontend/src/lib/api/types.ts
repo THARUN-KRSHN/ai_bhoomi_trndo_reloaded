@@ -171,6 +171,10 @@ export interface PromotionRequest {
     price?: number | null;
     verified_attributes?: string[];
   };
+  logo_asset_id?: string | null;
+  brand_asset_id?: string | null;
+  product_image_asset_id?: string | null;
+  product_image_url?: string | null;
   language: string;
   channels: string[];
   formats: PromotionFormat[];

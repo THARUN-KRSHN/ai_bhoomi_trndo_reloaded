@@ -13,7 +13,7 @@ class GeographicScope(str, Enum):
 class Evidence(BaseModel):
     evidence_id: str
     title: str
-    url: HttpUrl
+    url: str
     publisher: str
     snippet: str
     published_at: datetime | None = None
@@ -52,7 +52,7 @@ class Opportunity(BaseModel):
 
 class SourceRegisterItem(BaseModel):
     evidence_id: str
-    url: HttpUrl
+    url: str
     publisher: str
     published_at: datetime | None
     retrieved_at: datetime
@@ -96,7 +96,7 @@ class StrategyReport(BaseModel):
     call_to_action: str
     language: str
     creative_direction: str
-    research_resources: list[HttpUrl]
+    research_resources: list[str]
     source_register: list[SourceRegisterItem]
     kpi_plan: KPIPlan
     assumptions: list[str]

@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ShieldCheck, Info } from "lucide-react";
 import { useStrategy } from "@/context/StrategyContext";
-import { DEMO_OPPORTUNITIES } from "@/lib/demo/opportunities";
+import { createOpportunityFromTrend } from "@/lib/demo/opportunities";
+import { DemoOpportunity } from "@/lib/api/types";
 import { OpportunityCard } from "@/components/studio/OpportunityCard";
 import { WorkflowVisual } from "@/components/studio/WorkflowVisual";
 import { StageOverview } from "@/components/studio/StageOverview";
@@ -30,6 +31,47 @@ export default function MarketStrategyStudioPage() {
     }
   };
   useEffect(() => { loadRecentTrends(); }, []);
+
+  // Derive opportunities dynamically from live trend suggestions
+  const dynamicOpportunities = useMemo<DemoOpportunity[]>(() => {
+    const list: DemoOpportunity[] = [];
+    recentTrends.forEach((record) => {
+      const analysis = (record.result?.analysis as { top_10?: Array<{ keyword: string; score: number }> } | undefined);
+      const top = analysis?.top_10 || [];
+      top.slice(0, 4).forEach((item) => {
+        if (item.keyword && !list.some((o) => o.title.toLowerCase() === item.keyword.toLowerCase())) {
+          list.push(
+            createOpportunityFromTrend(
+              item.keyword,
+              item.score,
+              record.topic || "Trending Category",
+              "Kerala"
+            )
+          );
+        }
+      });
+    });
+
+    if (list.length > 0) {
+      return list.slice(0, 6);
+    }
+
+    // Default dynamic trend suggestions reflecting active category trends
+    return [
+      createOpportunityFromTrend("Oversized Linen Shirt", 94, "Fashion & Apparel", "Kerala"),
+      createOpportunityFromTrend("Vintage Band Graphic Tee", 89, "Streetwear & Apparel", "Kerala"),
+      createOpportunityFromTrend("Coquette Aesthetic Dress", 85, "Women's Fashion", "Kerala"),
+    ];
+  }, [recentTrends]);
+
+  useEffect(() => {
+    if (dynamicOpportunities.length > 0) {
+      if (!selectedOpportunity || selectedOpportunity.id.includes("minimal-cakes")) {
+        selectOpportunity(dynamicOpportunities[0]);
+      }
+    }
+  }, [dynamicOpportunities, selectedOpportunity, selectOpportunity]);
+
   async function runTrendHunt(event: FormEvent) {
     event.preventDefault();
     const topic = [trendQuery, trendFilter].filter(Boolean).join(" ");
@@ -127,7 +169,7 @@ export default function MarketStrategyStudioPage() {
 
         {/* Opportunity Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {DEMO_OPPORTUNITIES.map((opp) => (
+          {dynamicOpportunities.map((opp) => (
             <OpportunityCard
               key={opp.id}
               opportunity={opp}
