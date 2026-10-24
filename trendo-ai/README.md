@@ -4,6 +4,16 @@ This Flask service is the Trend Discovery layer of the integrated TRNDO AI
 product. It remains separate from the FastAPI strategy backend and provides
 current trend signals without replacing the strategy engine's scoring logic.
 
+## Live project links
+
+- **Frontend:** [TRNDO AI — Market Strategy Studio](https://trndo-v2.vercel.app/)
+- **FastAPI API:** `https://market-strategy-6de5.onrender.com`
+- **Demo video and walkthrough:** [Google Drive demo folder](https://drive.google.com/drive/folders/12Hx-QYc7aMOplbKOgMxC_obtuYEar0Ih?usp=drive_link)
+
+The Flask service is deployed independently from the frontend and FastAPI
+service. Its Render URL should be supplied as `TREND_FINDER_BASE_URL` in the
+FastAPI environment.
+
 ## Run locally
 
 ```powershell

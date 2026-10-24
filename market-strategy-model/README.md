@@ -2,6 +2,16 @@
 
 TRNDO Intelligence is a runnable FastAPI middle-layer MVP for evidence-grounded market strategy generation. It uses deterministic scoring, optional Tavily/YouTube connectors, and OpenAI Responses API Structured Outputs for narrative strategy interpretation. Live research is never represented when a provider is unavailable. The demo report is explicitly marked `demo: true`.
 
+## Live project links
+
+- **Frontend:** [TRNDO AI — Market Strategy Studio](https://trndo-v2.vercel.app/)
+- **API base:** `https://market-strategy-6de5.onrender.com`
+- **Demo video and walkthrough:** [Google Drive demo folder](https://drive.google.com/drive/folders/12Hx-QYc7aMOplbKOgMxC_obtuYEar0Ih?usp=drive_link)
+
+The public API base is intended for service integration and health checks. Use
+`/health` and `/docs` to confirm deployment status; provider keys and database
+credentials are never part of the frontend configuration.
+
 ## Setup
 
 ### Ubuntu/Linux
@@ -142,6 +152,20 @@ Orders calculate totals on the server from the supplied verified unit price. Unk
 UPI uses a locally generated `upi://pay` intent and QR image. It is not a payment gateway and does not verify settlement. Configure `MERCHANT_UPI_VPA` and `MERCHANT_UPI_NAME` only for development testing; never collect a UPI PIN or bank credential.
 
 Telegram linking uses a short-lived, single-use token and a validated webhook secret when configured. Duplicate update IDs are ignored. The webhook handles secure merchant linking, customer order updates, callback authorization, and deduplication. A local polling worker is available with `python -m app.telegram.polling`; use either polling or webhooks for a bot, never both at once. This module is not an Instagram or WhatsApp integration.
+
+Telegram allows only one update consumer per bot. The application starts the
+polling worker automatically when `TELEGRAM_BOT_TOKEN` is set and
+`TELEGRAM_MODE=polling`. If another process is already polling, or Telegram
+has an active webhook, the API returns `409 Conflict`; this worker logs the
+configuration problem and stops instead of retrying forever. For webhook
+deployments, set:
+
+```env
+TELEGRAM_MODE=webhook
+```
+
+For local polling, stop every other process using the bot and remove any
+active webhook before setting `TELEGRAM_MODE=polling`.
 
 Promotion generation quota is configurable through `FREE_MONTHLY_PROMOTION_QUOTA` and `PREMIUM_MONTHLY_PROMOTION_QUOTA`. Usage is tracked per merchant and calendar month, and idempotency keys prevent duplicate charges. The current development API uses the fixture merchant identity until authentication is added.
 

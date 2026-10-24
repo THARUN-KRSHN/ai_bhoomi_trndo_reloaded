@@ -2,6 +2,28 @@
 
 TRNDO AI is a local-first marketing workspace for small businesses. It combines an evidence-grounded market strategy backend with a visual Marketing Studio for turning an approved strategy into promotional creatives, Telegram enquiries, orders, and payment instructions.
 
+## Live project
+
+- **Live application:** [TRNDO AI — Market Strategy Studio](https://trndo-v2.vercel.app/)
+- **Demo video and walkthrough:** [Open the Google Drive demo folder](https://drive.google.com/drive/folders/12Hx-QYc7aMOplbKOgMxC_obtuYEar0Ih?usp=drive_link)
+- **FastAPI API:** `https://market-strategy-6de5.onrender.com`
+
+The live frontend is deployed on Vercel. The FastAPI service is deployed on
+Render and coordinates the authenticated strategy, trend, promotion, order,
+Telegram, and payment-instruction workflows. Provider credentials remain
+server-side and are never required by the browser.
+
+## Product preview
+
+![TRNDO AI Market Strategy Studio](./frontend/public/scrnshots/Screenshot%202026-10-24%20113331.png)
+
+The repository also includes a safe product gallery screenshot:
+
+![TRNDO AI creations gallery](./frontend/public/scrnshots/Screenshot%202026-10-24%20113351.png)
+
+Screenshots containing phone numbers, PIN fields, tokens, or other personal
+information are intentionally not linked from the public README.
+
 ## Product overview
 
 TRNDO is one product implemented as three independently runnable services:

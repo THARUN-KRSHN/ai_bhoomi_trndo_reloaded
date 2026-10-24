@@ -2,6 +2,18 @@
 
 This Next.js application provides the TRNDO AI Market Strategy interface and the downstream Marketing Studio. It is designed to work with the FastAPI backend in `..\market-strategy-model`.
 
+## Live links
+
+- **Application:** [TRNDO AI — Market Strategy Studio](https://trndo-v2.vercel.app/)
+- **Demo video and walkthrough:** [Google Drive demo folder](https://drive.google.com/drive/folders/12Hx-QYc7aMOplbKOgMxC_obtuYEar0Ih?usp=drive_link)
+- **FastAPI API:** `https://market-strategy-6de5.onrender.com`
+
+## Screenshots
+
+![TRNDO AI Marketing Studio](./public/scrnshots/Screenshot%202026-10-24%20113331.png)
+
+![TRNDO AI creations gallery](./public/scrnshots/Screenshot%202026-10-24%20113351.png)
+
 ## Stack
 
 - Next.js 16 App Router

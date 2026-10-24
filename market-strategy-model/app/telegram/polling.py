@@ -1,6 +1,8 @@
 import asyncio
 import logging
 
+import httpx
+
 from app.telegram.client import TelegramClient
 from app.telegram.handlers import handle_update
 
@@ -26,8 +28,18 @@ async def run() -> None:
         except asyncio.CancelledError:
             logger.info("Telegram polling stopped")
             break
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 409:
+                logger.error(
+                    "Telegram polling stopped: another consumer is using getUpdates "
+                    "or this bot has an active webhook. Set TELEGRAM_MODE=webhook "
+                    "or stop the other poller before restarting."
+                )
+                break
+            logger.warning("Telegram polling HTTP error: %s. Retrying in 3s...", exc)
+            await asyncio.sleep(3)
         except Exception as exc:
-            logger.warning(f"Telegram polling error: {exc}. Retrying in 3s...")
+            logger.warning("Telegram polling error: %s. Retrying in 3s...", exc)
             await asyncio.sleep(3)
 
 
