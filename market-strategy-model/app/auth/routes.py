@@ -71,3 +71,36 @@ def update_profile(payload: ShopProfileRequest, request: Request):
         user = current_user(request, session)
         profile = save_profile(session, user, payload.model_dump())
         return {"profile": json.loads(profile.profile_json), "version": profile.version}
+
+
+@profile_router.post("/profile/logo")
+async def upload_logo(request: Request):
+    from fastapi import UploadFile, File
+    from app.promotion.service import save_uploaded_asset
+    from app.db.models import AssetRecord
+
+    form = await request.form()
+    file = form.get("file")
+    if not isinstance(file, UploadFile):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="file is required")
+
+    content = await file.read()
+    with SessionLocal() as session:
+        user = current_user(request, session)
+        asset = save_uploaded_asset(session, user.user_id, "logo", file.filename or "logo.png", content)
+        asset.user_id = user.user_id
+        profile = session.query(ShopProfile).filter_by(user_id=user.user_id).first()
+        if profile:
+            data = json.loads(profile.profile_json)
+            data["logo_asset_id"] = asset.asset_id
+            data["logo_url"] = f"/api/v1/promotions/assets/{asset.asset_id}"
+            profile.profile_json = json.dumps(data)
+            profile.version += 1
+        session.commit()
+        return {
+            "asset_id": asset.asset_id,
+            "logo_url": f"/api/v1/promotions/assets/{asset.asset_id}",
+            "filename": asset.filename,
+        }
+

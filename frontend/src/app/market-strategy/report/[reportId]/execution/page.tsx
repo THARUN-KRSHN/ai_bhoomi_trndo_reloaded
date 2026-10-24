@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   ChevronDown,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { useStrategy } from "@/context/StrategyContext";
 import { getStrategyReport } from "@/lib/api/client";
@@ -192,6 +193,32 @@ export default function CampaignExecutionPage() {
             ))}
           </div>
         </Accordion>
+      </div>
+
+      {/* Final Step: Generate Marketing Content in Market Studio */}
+      <div className="p-7 rounded-[26px] bg-[#0C3D2D] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm">
+        <div className="space-y-1.5 max-w-xl">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#70F0A6]" />
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[#70F0A6]">
+              Final Action · Creative Promotion
+            </span>
+          </div>
+          <h3 className="text-xl font-bold text-white">
+            Ready to generate promotional posters &amp; content?
+          </h3>
+          <p className="text-xs text-white/80 leading-relaxed">
+            Market Studio will turn these campaign steps into branded posters, captions, and hashtags formatted for Instagram, WhatsApp, and Telegram.
+          </p>
+        </div>
+
+        <Link
+          href={`/marketing-studio/create?strategy=${reportId}`}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#70F0A6] text-[#0C3D2D] text-xs font-bold hover:bg-white transition-all shrink-0 shadow-sm"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Launch in Market Studio &rarr;</span>
+        </Link>
       </div>
 
       {/* 6. Consistent Back to Report Button */}

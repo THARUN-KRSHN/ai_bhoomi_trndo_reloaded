@@ -146,3 +146,12 @@ class TelegramUpdate(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     update_id: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class TelegramConversationState(Base):
+    __tablename__ = "telegram_conversation_states"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    chat_id: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    state: Mapped[str] = mapped_column(String(50), default="idle")
+    context_json: Mapped[str] = mapped_column(Text, default="{}")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

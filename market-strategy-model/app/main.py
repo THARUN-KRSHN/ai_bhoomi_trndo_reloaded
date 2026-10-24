@@ -14,15 +14,24 @@ Base.metadata.create_all(bind=engine)
 
 
 def _add_missing_columns() -> None:
-    """Keep the local SQLite prototype usable when a new field is added."""
+    """Keep the local SQLite prototype usable when new fields are added."""
     from sqlalchemy import inspect, text
 
     inspector = inspect(engine)
-    if "users" in inspector.get_table_names():
+    tables = inspector.get_table_names()
+
+    if "users" in tables:
         columns = {column["name"] for column in inspector.get_columns("users")}
         if "onboarding_skipped" not in columns:
             with engine.begin() as connection:
                 connection.execute(text("ALTER TABLE users ADD COLUMN onboarding_skipped BOOLEAN DEFAULT 0"))
+
+    for table_name in ["orders", "promotions", "assets", "strategies", "telegram_bindings"]:
+        if table_name in tables:
+            columns = {column["name"] for column in inspector.get_columns(table_name)}
+            if "user_id" not in columns:
+                with engine.begin() as connection:
+                    connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN user_id VARCHAR(64)"))
 
 
 _add_missing_columns()

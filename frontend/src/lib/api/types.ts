@@ -237,4 +237,6 @@ export interface Order {
   total_amount: number | null;
   currency: string;
   payment_status: string;
+  fulfillment_notes?: string | null;
+  created_at?: string;
 }

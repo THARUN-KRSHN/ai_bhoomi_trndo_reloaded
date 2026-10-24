@@ -66,6 +66,19 @@ def get_promotion(promotion_id: str, request: Request):
         return _response(session, record)
 
 
+@router.get("/promotions")
+def list_promotions(request: Request, limit: int = 20):
+    with SessionLocal() as session:
+        query = session.query(PromotionRecord)
+        if request.headers.get("Authorization"):
+            user = current_user(request, session)
+            query = query.filter_by(user_id=user.user_id)
+        records = query.order_by(PromotionRecord.created_at.desc()).limit(min(max(limit, 1), 50)).all()
+        from app.promotion.service import _response
+        return [_response(session, r) for r in records]
+
+
+
 @router.get("/promotions/{promotion_id}/assets")
 def list_promotion_assets(promotion_id: str):
     with SessionLocal() as session:

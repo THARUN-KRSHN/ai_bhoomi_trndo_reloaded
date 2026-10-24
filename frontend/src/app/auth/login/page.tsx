@@ -7,11 +7,15 @@ import { authenticate } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const router = useRouter(); const { } = useAuth();
+  const router = useRouter(); const { refreshUser } = useAuth();
   const [phone, setPhone] = useState(""); const [pin, setPin] = useState(""); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent) {
     event.preventDefault(); setError(""); setBusy(true);
-    try { const result = await authenticate("/api/v1/auth/login", phone, pin); router.push(result.onboarding_complete ? "/market-strategy" : "/onboarding"); }
+    try {
+      const result = await authenticate("/api/v1/auth/login", phone, pin);
+      await refreshUser();
+      router.push(result.onboarding_complete ? "/app" : "/onboarding");
+    }
     catch { setError("Phone number or PIN is incorrect."); } finally { setBusy(false); }
   }
   return <AuthShell eyebrow="Your next move starts here." title="Welcome back" subtitle="Sign in to continue your market workflow."><form onSubmit={submit} className="space-y-5">

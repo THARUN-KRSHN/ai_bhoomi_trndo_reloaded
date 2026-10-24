@@ -25,6 +25,11 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_ENABLE_DEMO_DATA=true
 ```
 
+The current UI uses browser session authentication and interactive client routes.
+`next.config.ts` keeps `cacheComponents` and `partialPrefetching` disabled so
+Next.js does not drop those routes during instant-navigation validation. Do not
+enable them until the client-authenticated layouts are migrated to that model.
+
 Only public, non-secret values belong in `.env.local`. Do not expose `OPENAI_API_KEY`, Telegram bot tokens, webhook secrets, UPI credentials, or database credentials to the browser.
 
 ## Development and production checks

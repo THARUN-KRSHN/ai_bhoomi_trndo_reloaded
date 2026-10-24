@@ -45,7 +45,7 @@ def demo():
 
 
 @router.post("/strategy/from-trend/{search_id}", response_model=StrategyReport)
-async def generate_from_trend(search_id: str, request: Request):
+async def generate_from_trend(search_id: str, request: Request, product_name: str | None = None):
     with SessionLocal() as session:
         user = current_user(request, session)
         trend = session.query(TrendSearchRecord).filter_by(search_id=search_id, user_id=user.user_id).first()
@@ -53,21 +53,26 @@ async def generate_from_trend(search_id: str, request: Request):
         if not trend or not profile_record:
             raise HTTPException(status_code=404, detail="trend search or shop profile not found")
         profile = json.loads(profile_record.profile_json)
-        products = profile.get("products") or [{"name": trend.topic, "description": profile.get("description", ""), "price": None}]
+
+        if product_name:
+            products = [{"name": product_name.strip(), "description": f"Trending {product_name.strip()} opportunity for {profile.get('shop_name', 'our shop')}", "price": None}]
+        else:
+            products = profile.get("products_services") or profile.get("products") or [{"name": trend.topic, "description": profile.get("short_description") or profile.get("description", ""), "price": None}]
+
         request_model = BusinessRequest(
-            business_name=profile.get("shop_name"),
-            category=profile["category"],
-            subcategory=profile.get("subcategory"),
-            city=profile["city"],
-            region=profile["region"],
-            country=profile["country"],
-            primary_language=profile["primary_language"],
-            secondary_languages=profile.get("secondary_languages", []),
+            business_name=profile.get("shop_name", "Shop"),
+            category=profile.get("business_category") or profile.get("category", "Retail"),
+            subcategory=profile.get("business_subcategory") or profile.get("subcategory"),
+            city=profile.get("city", "Kerala"),
+            region=profile.get("region", "Kerala"),
+            country=profile.get("country", "India"),
+            primary_language=profile.get("primary_language", "English"),
+            secondary_languages=profile.get("additional_languages") or profile.get("secondary_languages", []),
             products_services=products,
-            target_audience=profile.get("audience_description", "Local customers"),
+            target_audience=profile.get("target_audience") or profile.get("audience_description", "Local customers"),
             objective=profile.get("objective", "increase_qualified_inquiries"),
-            preferred_channels=profile.get("preferred_channels", []),
-            brand_personality=", ".join(profile.get("brand_personality", [])) or None,
+            preferred_channels=profile.get("preferred_channels", ["Instagram", "WhatsApp"]),
+            brand_personality=profile.get("brand_personality") if isinstance(profile.get("brand_personality"), str) else ", ".join(profile.get("brand_personality") or []) or None,
             campaign_time_horizon="14 days",
             constraints=profile.get("constraints", []),
         )
@@ -95,3 +100,25 @@ def get_strategy(strategy_id: str, request: Request):
     if not record:
         raise HTTPException(status_code=404, detail="Strategy not found")
     return json.loads(record.report_json)
+
+
+@router.get("/strategies")
+def list_strategies(request: Request, limit: int = 10):
+    with SessionLocal() as session:
+        query = session.query(StrategyRecord)
+        if request.headers.get("Authorization"):
+            user = current_user(request, session)
+            query = query.filter_by(user_id=user.user_id)
+        records = query.order_by(StrategyRecord.created_at.desc()).limit(min(max(limit, 1), 50)).all()
+        results = []
+        for r in records:
+            report_data = json.loads(r.report_json)
+            results.append({
+                "strategy_id": r.strategy_id,
+                "user_id": r.user_id,
+                "created_at": r.created_at,
+                "score_version": r.score_version,
+                "report": report_data,
+            })
+        return results
+

@@ -79,6 +79,12 @@ npm run dev
 
 Open <http://localhost:3000>. The frontend uses `NEXT_PUBLIC_API_BASE_URL` for the backend URL and `NEXT_PUBLIC_ENABLE_DEMO_DATA` for explicit demo fallback behavior. Browser-exposed variables must never contain API keys or Telegram secrets.
 
+If Next.js reports `Could not validate that a segment in your UI has instant navigation`,
+ensure the checked-in frontend configuration has `cacheComponents: false`. The current
+interactive routes depend on browser authentication state and are intentionally run
+without instant-navigation validation until those routes are migrated to the cache
+components model.
+
 ## Main frontend flows
 
 - `/market-strategy` — existing strategy workflow.

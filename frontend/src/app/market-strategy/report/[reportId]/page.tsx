@@ -14,6 +14,7 @@ import {
   ArrowRight,
   ShieldCheck,
   ArrowUpRight,
+  Sparkles,
 } from "lucide-react";
 import { useStrategy } from "@/context/StrategyContext";
 import { getStrategyReport } from "@/lib/api/client";
@@ -361,6 +362,32 @@ export default function ReportOverviewPage() {
             <span>View Assumptions, Missing Data & Risks →</span>
           </Link>
         </div>
+      </section>
+
+      {/* SECTION F: Final Action - Launch in Market Studio */}
+      <section className="p-7 sm:p-8 rounded-[28px] bg-[#0C3D2D] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm">
+        <div className="space-y-2 max-w-xl">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#70F0A6]" />
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[#70F0A6]">
+              Final Step · Marketing Studio
+            </span>
+          </div>
+          <h3 className="text-xl sm:text-2xl font-black text-white leading-snug">
+            Turn this strategy into promotional posters &amp; content
+          </h3>
+          <p className="text-xs text-white/80 leading-relaxed">
+            Market Studio will automatically take this verified strategy and generate ready-to-share posters, captions, and hashtags formatted for Instagram, WhatsApp, and Telegram.
+          </p>
+        </div>
+
+        <Link
+          href={`/marketing-studio/create?strategy=${report.strategy_id}&product=${encodeURIComponent(primaryOpp?.title || "")}`}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[#70F0A6] text-[#0C3D2D] text-xs font-black hover:bg-white transition-all shrink-0 shadow-sm"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Open Market Studio &rarr;</span>
+        </Link>
       </section>
     </div>
   );

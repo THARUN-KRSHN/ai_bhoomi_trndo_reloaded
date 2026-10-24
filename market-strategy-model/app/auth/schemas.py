@@ -20,7 +20,7 @@ class PinChangeRequest(BaseModel):
 
 class ProductProfile(BaseModel):
     name: str = Field(min_length=1, max_length=200)
-    description: str = Field(min_length=1, max_length=2000)
+    description: str = Field(default="", max_length=2000)
     verified_attributes: list[str] = Field(default_factory=list, max_length=30)
     price: float | None = Field(default=None, ge=0)
     unit_cost: float | None = Field(default=None, ge=0)
@@ -45,3 +45,6 @@ class ShopProfileRequest(BaseModel):
     products: list[ProductProfile] = Field(default_factory=list, max_length=30)
     objective: str = Field(default="increase_qualified_inquiries", max_length=80)
     constraints: list[str] = Field(default_factory=list, max_length=30)
+    logo_url: str | None = Field(default=None)
+    logo_asset_id: str | None = Field(default=None)
+

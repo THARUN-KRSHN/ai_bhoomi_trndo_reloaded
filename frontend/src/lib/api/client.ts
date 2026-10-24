@@ -241,8 +241,9 @@ export async function searchTrends(topic: string, filters: Record<string, unknow
   });
 }
 
-export async function generateStrategyFromTrend(searchId: string) {
-  return request<StrategyReport>(`/api/v1/strategy/from-trend/${encodeURIComponent(searchId)}`, { method: "POST" });
+export async function generateStrategyFromTrend(searchId: string, productName?: string) {
+  const query = productName ? `?product_name=${encodeURIComponent(productName)}` : "";
+  return request<StrategyReport>(`/api/v1/strategy/from-trend/${encodeURIComponent(searchId)}${query}`, { method: "POST" });
 }
 
 export async function generatePromotion(input: PromotionRequest): Promise<PromotionResponse> {
@@ -282,4 +283,79 @@ export async function getPaymentInstructions(orderId: string, merchantId = "deve
   );
 }
 
+export async function listStrategies(limit = 20) {
+  return request<Array<{ strategy_id: string; user_id: string; created_at: string; score_version: string; report: StrategyReport }>>(`/api/v1/strategies?limit=${limit}`);
+}
+
+export async function listPromotions(limit = 20) {
+  return request<PromotionResponse[]>(`/api/v1/promotions?limit=${limit}`);
+}
+
+export async function listOrders(merchantId?: string) {
+  const query = merchantId ? `?merchant_id=${encodeURIComponent(merchantId)}` : "";
+  return request<Order[]>(`/api/v1/orders${query}`);
+}
+
+export async function createOrder(payload: { product_name: string; quantity: number; unit_price?: number; fulfillment_notes?: string; merchant_id?: string }) {
+  return request<Order>("/api/v1/orders", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function uploadShopLogo(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const token = typeof window !== "undefined" ? sessionStorage.getItem("trndo_access_token") : null;
+  const res = await fetch(`${API_BASE_URL}/api/v1/profile/logo`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  });
+  if (!res.ok) {
+    throw new ApiError("Failed to upload shop logo", res.status);
+  }
+  return res.json() as Promise<{ asset_id: string; logo_url: string; filename: string }>;
+}
+
+export async function getTelegramLinkToken(merchantId = "merchant") {
+  return request<{ token: string; expires_in_seconds: number; deep_link: string }>(`/api/v1/telegram/link-token?merchant_id=${encodeURIComponent(merchantId)}`, {
+    method: "POST",
+  });
+}
+
+export async function getTelegramConversations() {
+  return request<{
+    linked: boolean;
+    chat_id: string | null;
+    conversations: Array<{
+      conversation_id: string;
+      order_id: string;
+      chat_id: string;
+      customer_name: string;
+      product_name: string;
+      last_message: string;
+      updated_at: string;
+      status: string;
+    }>;
+  }>("/api/v1/telegram/conversations");
+}
+
+export async function replyTelegramConversation(conversationId: string, chatId: string, message: string) {
+  return request<{ status: string; chat_id: string; simulated?: boolean }>(`/api/v1/telegram/conversations/${encodeURIComponent(conversationId)}/reply`, {
+    method: "POST",
+    body: JSON.stringify({ chat_id: chatId, message }),
+  });
+}
+
+export async function changePin(currentPin: string, newPin: string) {
+  return request<void>("/api/v1/auth/pin", {
+    method: "PATCH",
+    body: JSON.stringify({ current_pin: currentPin, new_pin: newPin }),
+  });
+}
+
 export { API_BASE_URL, ENABLE_DEMO_DATA };
+
