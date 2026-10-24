@@ -43,6 +43,31 @@ npm run lint
 
 Open <http://localhost:3000> after starting the development server.
 
+## Deploy on Vercel
+
+Import the repository into Vercel and set **Root Directory** to `frontend`.
+Vercel detects Next.js automatically:
+
+```text
+Install Command: npm ci
+Build Command:   npm run build
+Output Directory: leave blank
+```
+
+Set these Vercel environment variables for Production and Preview as
+appropriate:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://<your-fastapi-render-domain>
+NEXT_PUBLIC_ENABLE_DEMO_DATA=false
+```
+
+The browser must only receive public `NEXT_PUBLIC_*` values. Never add OpenAI,
+Gemini, Groq, SerpApi, Telegram, UPI, or database credentials to Vercel.
+After deployment, open `/auth/register`, complete a test account flow, and
+verify that the browser can reach the FastAPI `/health` and authenticated API
+routes. Add the final Vercel domain to the FastAPI `ALLOWED_ORIGINS` value.
+
 ## Routes
 
 ### Account and discovery

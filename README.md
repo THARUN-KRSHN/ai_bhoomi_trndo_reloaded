@@ -41,6 +41,24 @@ python app.py
 
 The Flask dashboard now contains an `Open Marketing Studio` bridge at `/marketing-studio` and an integration status endpoint at `/integration/status`. The bridge keeps Trend Discovery and Marketing Studio in the same TRNDO workflow without duplicating the strategy engine.
 
+## Deployment order
+
+Deploy the services in this order so each public URL is available for the next
+service's environment variables:
+
+1. Flask Trend Finder on Render.
+2. FastAPI Strategy API on Render.
+3. Next.js frontend on Vercel.
+
+Use the deployment settings documented in the service READMEs. After each
+deployment, verify `/health` before continuing. Do not use localhost URLs in
+production environment variables.
+
+Render's local filesystem is ephemeral. For a production FastAPI deployment,
+attach a Render Postgres database and set `DATABASE_URL`; use a persistent disk
+or object storage for generated promotion assets. SQLite and local storage are
+acceptable only for a disposable demo.
+
 ## Run the FastAPI backend
 
 ```powershell

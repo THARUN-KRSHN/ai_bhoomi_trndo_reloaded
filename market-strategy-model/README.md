@@ -42,6 +42,42 @@ curl -X POST http://127.0.0.1:8000/api/v1/strategy/demo
 ```
 Generation accepts the request schema at `/api/v1/strategy/generate`; retrieval is available at `/api/v1/strategy/{strategy_id}`. Run tests with `pytest`.
 
+## Deploy on Render
+
+Create a **Web Service** with this repository and set **Root Directory** to
+`market-strategy-model`.
+
+```text
+Build Command:  pip install -r requirements.txt
+Start Command: gunicorn -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --workers 2 app.main:app
+Health Check:  /health
+```
+
+Set these environment variables:
+
+```env
+APP_ENV=production
+DATABASE_URL=<Render Postgres internal connection URL>
+ALLOWED_ORIGINS=https://<your-vercel-domain>
+TREND_FINDER_BASE_URL=https://<your-flask-render-domain>
+TREND_FINDER_TIMEOUT_SECONDS=60
+PROMOTION_DEMO_MODE=false
+OPENAI_API_KEY=<server-side-secret>
+OPENAI_MODEL=<available-model>
+TAVILY_API_KEY=<server-side-secret>
+YOUTUBE_API_KEY=<optional-server-side-secret>
+TELEGRAM_BOT_TOKEN=<optional-server-side-secret>
+TELEGRAM_BOT_USERNAME=<optional>
+TELEGRAM_WEBHOOK_SECRET=<optional-server-secret>
+PUBLIC_BASE_URL=https://<your-fastapi-render-domain>
+```
+
+The `psycopg` dependency is included for Render Postgres. SQLite is not
+durable on Render without a persistent disk. Promotion files are also local
+files, so attach a persistent disk and set `PROMOTION_STORAGE_DIR`, or migrate
+asset storage to object storage before relying on generated assets in
+production. After deployment, verify `/health` and `/docs`.
+
 ## Strategy algorithm
 
 The reproducible pipeline profiles the merchant, creates context-specific research queries, normalizes and deduplicates evidence, evaluates an opportunity with the configured `heuristic-v1` weights, formulates a STP/JTBD-informed experiment, and validates the structured report. The default weights are demand evidence 25%, shop fit 25%, differentiation 15%, commercial feasibility 20%, and execution feasibility 15%.

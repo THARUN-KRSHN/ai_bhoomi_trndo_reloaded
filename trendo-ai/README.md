@@ -15,6 +15,33 @@ python app.py
 
 The service runs at `http://127.0.0.1:5000`.
 
+## Deploy on Render
+
+Create a **Web Service** with this repository and set **Root Directory** to
+`trendo-ai`.
+
+```text
+Build Command:  pip install -r requirements.txt
+Start Command: gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 app:app
+Health Check:  /health
+```
+
+Set these Render environment variables:
+
+```env
+GROQ_API_KEY=<server-side-secret>
+GROQ_MODEL=qwen/qwen3.8-27b
+SERPAPI_KEY=<server-side-secret>
+GEMINI_API_KEY=<server-side-secret>
+GEMINI_MODEL=gemini-2.0-flash
+MARKETING_STUDIO_URL=https://<your-vercel-domain>/marketing-studio
+STRATEGY_API_URL=https://<your-fastapi-render-domain>
+```
+
+Never expose these values as `NEXT_PUBLIC_*` variables or commit them. After
+deployment, verify `https://<service>/health` and
+`https://<service>/category-options?category=Fashion`.
+
 ## Endpoints
 
 - `GET /` — Trend Finder dashboard.
