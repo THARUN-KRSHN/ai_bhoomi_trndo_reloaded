@@ -21,6 +21,30 @@ The repository also includes a safe product gallery screenshot:
 
 ![TRNDO AI creations gallery](./frontend/public/scrnshots/Screenshot%202026-10-24%20113351.png)
 
+### Product screens
+
+![TRNDO AI Marketing Studio](./frontend/public/scrnshots/Screenshot%202026-10-24%20113339.png)
+
+![Telegram inbox](./frontend/public/scrnshots/Screenshot%202026-10-24%20113402.png)
+
+![Customer orders](./frontend/public/scrnshots/Screenshot%202026-10-24%20113412.png)
+
+![Strategy generation](./frontend/public/scrnshots/Screenshot%202026-10-24%20113455.png)
+
+![Recommended strategy action](./frontend/public/scrnshots/Screenshot%202026-10-24%20113934.png)
+
+![Strategy execution plan](./frontend/public/scrnshots/Screenshot%202026-10-24%20113950.png)
+
+![Supporting web citations](./frontend/public/scrnshots/Screenshot%202026-10-24%20114001.png)
+
+![Trend signals](./frontend/public/scrnshots/Screenshot%202026-10-24%20114019.png)
+
+![Trend Finder search](./frontend/public/scrnshots/Screenshot%202026-10-24%20114055.png)
+
+![TRNDO landing page](./frontend/public/scrnshots/Screenshot%202026-10-24%20114105.png)
+
+![TRNDO account screen](./frontend/public/scrnshots/Screenshot%202026-10-24%20114134.png)
+
 Screenshots containing phone numbers, PIN fields, tokens, or other personal
 information are intentionally not linked from the public README.
 
